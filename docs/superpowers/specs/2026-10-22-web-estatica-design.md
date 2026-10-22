@@ -8,11 +8,11 @@
 
 Por orden de prioridad:
 
-1. **No afectar a la infraestructura del área privada.** `areaprivada.jlc-ingenieros.com` y `demo.jlc-ingenieros.com` (EC2 `3.12.236.157`, SPA Angular + API `/api/gesnorm`, Firebase `gesnormauth`, MongoDB Atlas) siguen funcionando exactamente igual durante y después de la migración. El correo (iCloud) y los registros DNS de Apple y Firebase tampoco cambian.
+1. **No afectar a la infraestructura del área privada.** `areaprivada.jlc-ingenieros.com`, `demo.jlc-ingenieros.com` y `met.jlc-ingenieros.com` (EC2 `3.12.236.157`, SPA Angular + API `/api/gesnorm`, Firebase `gesnormauth`, MongoDB Atlas) siguen funcionando exactamente igual durante y después de la migración. El correo (iCloud), el SES que ya se usa con el dominio y los registros DNS de Apple, Firebase y DMARC tampoco cambian.
 2. **Seguridad:** la web pública deja de ejecutar PHP y de usar base de datos (motivo: CVE-2026-109618 y CVE-2026-109619). No queda ningún servidor que parchear para la web pública.
 3. **SEO:** las URLs actuales en castellano se mantienen idénticas. Las URLs que desaparecen redirigen con 301. Se corrige el `canonical`/`og:url` que hoy apunta a `http://3.133.180.219`.
 4. **Funcionalidad equivalente o mejor:** mismo contenido, formulario de contacto operativo, trilingüe completo (ES/EN/CA), identidad visual compartida con el área privada.
-5. **Coste:** menos de 1 €/mes adicional en AWS; al final se retira el EC2 de WordPress.
+5. **Coste:** menos de 1 €/mes adicional en AWS; al final se retira la instancia Lightsail de WordPress.
 
 Mantenimiento: el titular edita Markdown en el repo pocas veces al año (o lo pide a Claude). No hay CMS.
 
@@ -31,9 +31,14 @@ Mantenimiento: el titular edita Markdown en el repo pocas veces al año (o lo pi
 | Rendimiento | WP Rocket | No hace falta (estático + CDN) |
 | Tema | Salient + WPBakery + Salient Portfolio | Diseño nuevo propio |
 | Publicaciones | 6 libros con enlaces a Amazon con parámetros de seguimiento | Enlaces limpios a Amazon |
-| Servidor | Apache en EC2 `3.133.180.219` | Se retira tras el corte |
+| Servidor | Apache en una instancia **Lightsail**, IP estática `3.133.180.219` | Se retira tras el corte |
 
-DNS (Route 53): apex A `3.133.180.219`; `www` → apex; `areaprivada` y `demo` A `3.12.236.157`; MX `mx01/mx02.mail.icloud.com`; TXT `apple-domain=…`, `v=spf1 include:icloud.com include:_spf.firebasemail.com ~all`, `firebase=gesnormauth` y otro TXT de verificación.
+DNS: zona pública alojada en **Route 53** (confirmado en la consola; 17 registros):
+- Apex: A `3.133.180.219`; MX `mx01/mx02.mail.icloud.com`; NS/SOA; TXT `apple-domain=…`, `firebase=gesnormauth`, `v=spf1 include:icloud.com include:_spf.firebasemail.com ~all` y otro TXT de verificación.
+- `www` → apex.
+- `areaprivada` (A `3.12.236.157` y un TXT), `demo` (A `3.12.236.157`) y `met` (A `3.12.236.157`).
+- `_dmarc` TXT `v=DMARC1; p=none;`.
+- DKIM: `sig1._domainkey` (iCloud), `firebase1._domainkey` y `firebase2._domainkey` (Firebase), y tres `<token>._domainkey` de **Amazon SES Easy DKIM**: ya existe una identidad SES del dominio en alguna región, usada por el área privada.
 
 Dependencias del área privada con el dominio principal (revisado en `GesAdmin_SPA`): solo enlaces salientes a `https://jlc-ingenieros.com` (`marca.web`) y a `http://www.jlc-ingenieros.com` (firma de comunicaciones). Siguen funcionando, porque `www` redirige con 301 al apex.
 
@@ -171,7 +176,11 @@ Las páginas "gracias" y la 404 llevan `noindex`.
 
 **Acceso:** la Function URL usa `AuthType NONE` (OAC con `POST` exigiría al navegador la cabecera `x-amz-content-sha256`, incompatible con un formulario sin JS). CloudFront añade al origen la cabecera `X-Origin-Verify` con un secreto aleatorio (parámetro de la pila, guardado en SSM) y la Lambda rechaza con 403 cualquier petición que no la lleve; así una llamada directa a la Function URL no sirve de nada. El comportamiento `/api/*` de CloudFront no usa caché y reenvía el cuerpo y las cabeceras necesarias.
 
-**SES (eu-west-3):** identidad de dominio `jlc-ingenieros.com` con Easy DKIM (3 CNAME nuevos). Se mantiene en sandbox, porque el único destinatario es una dirección verificada (jlcampos@jlc-ingenieros.com, que se verifica con el correo que envía SES). MAIL FROM por defecto (amazonses.com): no se modifica el SPF.
+**SES (eu-west-3):** el dominio ya tiene una identidad SES (3 CNAME Easy DKIM existentes), probablemente en otra región y usada por el área privada. Antes de desplegar se comprueba con `aws sesv2 get-email-identity --email-identity jlc-ingenieros.com --region eu-west-3`. Parámetro de la pila `CreateSesIdentity`:
+- **`true`** (no existe en París): se crea una identidad nueva en eu-west-3 con Easy DKIM (3 CNAME **nuevos**, con nombres distintos de los existentes). La reputación de envío queda separada por región, así que el spam que pudiera llegar al formulario no afecta a los envíos del área privada.
+- **`false`** (ya existe en París): se reutiliza sin modificarla.
+
+En ambos casos se mantiene en sandbox, porque el único destinatario es una dirección verificada (jlcampos@jlc-ingenieros.com, que se verifica con el correo que envía SES). MAIL FROM por defecto (amazonses.com): no se modifica el SPF.
 
 ## 7. Infraestructura AWS (`infra/`)
 
@@ -194,11 +203,11 @@ La plantilla **no** crea ni modifica registros DNS. Los registros nuevos (valida
 
 ## 8. Aislamiento del área privada (requisito nº 1)
 
-1. Pilas propias; ningún recurso existente se importa, modifica ni referencia (EC2, security groups, VPC, IAM ajeno, nginx).
-2. La zona de Route 53 no la gestiona la plantilla. Solo se **añaden** registros nuevos de nombre único y se **cambian** `jlc-ingenieros.com` y `www.jlc-ingenieros.com`. Lista de registros que **no se tocan nunca**: `areaprivada`, `demo`, MX, SPF, TXT `apple-domain`, TXT `firebase=gesnormauth` y el resto de TXT existentes, y NS/SOA. No se añade DMARC.
-3. SES no altera el SPF (MAIL FROM por defecto).
+1. Pilas propias; ningún recurso existente se importa, modifica ni referencia (EC2 del área privada, security groups, VPC, IAM ajeno, nginx, identidad SES existente). La instancia Lightsail de WordPress solo se toca en la retirada planificada (§10).
+2. La zona de Route 53 no la gestiona la plantilla. Solo se **añaden** registros nuevos de nombre único y se **cambian** `jlc-ingenieros.com` (solo el registro A; MX, TXT, NS y SOA del apex no se tocan) y `www.jlc-ingenieros.com`. Lista de registros que **no se tocan nunca**: `areaprivada` (A y TXT), `demo`, `met`, MX, todos los TXT del apex (Apple, Firebase, SPF y verificación), `_dmarc`, todos los `*._domainkey` existentes (iCloud, Firebase y SES), NS y SOA. El DMARC existente (`p=none`) no se modifica.
+3. SES no altera el SPF (MAIL FROM por defecto) ni la identidad SES existente (ver §6).
 4. Proveedor OIDC reutilizado si ya existe.
-5. **`scripts/check-isolation.sh`**: guarda una foto (`dig`/DoH) de todos los registros del dominio salvo apex y `www`, y la compara con una tomada antes. Comprueba que `areaprivada` y `demo` resuelven a `3.12.236.157`, que `https://areaprivada.jlc-ingenieros.com/` responde 200 y que `/api/gesnorm` responde (cualquier código distinto de 5xx o de un error de conexión). Se ejecuta antes y después de cada paso que toque DNS. Si detecta cualquier diferencia, ese paso se detiene y se deshace.
+5. **`scripts/check-isolation.sh`**: guarda una foto (`dig`/DoH) de todos los registros del dominio salvo apex y `www`, y la compara con una tomada antes. Comprueba que `areaprivada`, `demo` y `met` resuelven a `3.12.236.157`, que `https://areaprivada.jlc-ingenieros.com/` responde 200 y que `/api/gesnorm` responde (cualquier código distinto de 5xx o de un error de conexión). Se ejecuta antes y después de cada paso que toque DNS. Si detecta cualquier diferencia, ese paso se detiene y se deshace.
 
 ## 9. CI/CD (GitHub Actions)
 
@@ -220,7 +229,7 @@ La plantilla **no** crea ni modifica registros DNS. Los registros nuevos (valida
 3. Alta de los CNAME de ACM y DKIM; `check-isolation.sh`.
 4. Configuración de Turnstile (dominio `jlc-ingenieros.com` + dominio de CloudFront de pruebas) y verificación en SES de `jlcampos@jlc-ingenieros.com`.
 5. Revisión completa por el titular en la URL de pruebas, incluido un envío real del formulario.
-6. Copia de seguridad de WordPress: snapshot del EBS de `3.133.180.219` y descarga de `wp-content/uploads` y de una exportación WXR.
+6. Copia de seguridad de WordPress: **snapshot de la instancia Lightsail** y descarga de `wp-content/uploads` y de una exportación WXR.
 7. TTL de apex y `www` a 60 s, 24 h antes del corte; `check-isolation.sh`.
 
 **Corte (unos 5 min, en una franja de poco tráfico):**
@@ -232,9 +241,9 @@ La plantilla **no** crea ni modifica registros DNS. Los registros nuevos (valida
 **Vuelta atrás:** `UPSERT` de apex y `www` a sus valores originales (A `3.133.180.219` y `www` → apex), con efecto en ≈ 1 min. WordPress sigue encendido hasta el paso 13.
 
 **Retirada de WordPress:**
-12. El titular comprueba en la instancia `3.133.180.219` que no aloja nada más (*vhosts* de Apache, *crontab*, servicios en escucha, otros dominios), con la lista de `docs/retirada-wordpress.md`.
-13. A las 2–4 semanas del corte: se **detiene** la instancia.
-14. A los 30 días de detenerla sin incidencias: se termina, se libera la IP elástica y se conserva el snapshot 6 meses. No se renuevan las licencias de Rank Math PRO, WP Rocket ni Salient.
+12. El titular comprueba en la instancia Lightsail (`3.133.180.219`) que no aloja nada más (*vhosts* de Apache, *crontab*, servicios en escucha, otros dominios), con la lista de `docs/retirada-wordpress.md`.
+13. A las 2–4 semanas del corte: se **detiene** la instancia Lightsail.
+14. A los 30 días de detenerla sin incidencias: se elimina la instancia y **se libera la IP estática de Lightsail** (si queda sin asociar se cobra), y se conserva el snapshot 6 meses (o se exporta a EC2/EBS si sale más barato). No se renuevan las licencias de Rank Math PRO, WP Rocket ni Salient.
 
 ## 11. Pruebas
 
@@ -248,4 +257,4 @@ La plantilla **no** crea ni modifica registros DNS. Los registros nuevos (valida
 - Analítica sin cookies (logs de CloudFront o Plausible/Umami), sin banner.
 - CMS visual (Decap/Sveltia) si en el futuro edita otra persona.
 - Blog o noticias.
-- DMARC para el dominio: requiere coordinarlo con iCloud y Firebase.
+- Endurecer el DMARC existente (`p=none` → `quarantine`/`reject`): requiere coordinarlo con iCloud, Firebase y SES.
