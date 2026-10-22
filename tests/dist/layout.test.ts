@@ -1,3 +1,5 @@
+import { readFileSync } from 'node:fs';
+import { join } from 'node:path';
 import { describe, expect, it } from 'vitest';
 import { distFiles, readPage } from './helpers';
 
@@ -57,5 +59,29 @@ describe('layout de /estudio/', () => {
   it('páginas noindex llevan robots noindex', () => {
     const thanks = readPage('/contacto/gracias/');
     expect(thanks.querySelector('meta[name=robots]')?.getAttribute('content')).toBe('noindex');
+  });
+});
+
+describe('menú móvil sin JS', () => {
+  const css = () => {
+    const link = readPage('/estudio/').querySelector('link[rel=stylesheet]')!.getAttribute('href')!;
+    return readFileSync(join(process.cwd(), 'dist', link), 'utf8');
+  };
+
+  it('el colapso del panel y el botón solo aplican con la clase .js', () => {
+    const c = css();
+    // Toda regla que oculte el panel debe llevar el prefijo .js
+    expect(c).toMatch(/\.js \.site-header__panel:not\(\.is-open\)\{display:none/);
+    expect(c).toMatch(/\.js \.menu-toggle\{display:inline-flex/);
+    expect(c).not.toMatch(/(^|\})\.site-header__panel\{[^}]*display:none/);
+    expect(c).toMatch(/\.menu-toggle\{[^}]*display:none/);
+  });
+
+  it('menu.ts activa la clase js y existe el skip link', () => {
+    const page = readPage('/estudio/');
+    const src = page.querySelector('script[src]')!.getAttribute('src')!;
+    expect(readFileSync(join(process.cwd(), 'dist', src), 'utf8')).toContain('js');
+    expect(page.querySelector('a.skip-link')?.getAttribute('href')).toBe('#main');
+    expect(page.querySelector('main#main')).not.toBeNull();
   });
 });

@@ -1,3 +1,5 @@
+document.documentElement.classList.add('js');
+
 const toggle = document.querySelector<HTMLButtonElement>('[data-menu-toggle]');
 const panel = document.getElementById('site-menu');
 

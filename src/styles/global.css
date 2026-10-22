@@ -92,7 +92,7 @@ img {
   filter: brightness(0) invert(1);
 }
 .menu-toggle {
-  display: inline-flex;
+  display: none;
   align-items: center;
   padding: 0.5rem 0.75rem;
   font: inherit;
@@ -104,14 +104,20 @@ img {
   cursor: pointer;
 }
 .site-header__panel {
-  display: none;
+  display: flex;
   flex-basis: 100%;
   flex-direction: column;
   gap: 1rem;
   padding-bottom: 1rem;
 }
-.site-header__panel.is-open {
-  display: flex;
+/* Solo se colapsa si menu.ts ha añadido .js a <html>: sin JS el menú queda visible. */
+@media (max-width: 767.98px) {
+  .js .menu-toggle {
+    display: inline-flex;
+  }
+  .js .site-header__panel:not(.is-open) {
+    display: none;
+  }
 }
 .site-nav ul,
 .lang-switcher ul,
@@ -165,12 +171,7 @@ img {
 }
 
 @media (min-width: 768px) {
-  .menu-toggle {
-    display: none;
-  }
-  .site-header__panel,
-  .site-header__panel.is-open {
-    display: flex;
+  .site-header__panel {
     flex: 1;
     flex-basis: auto;
     flex-direction: row;

@@ -1,5 +1,6 @@
 ---
 import '../styles/global.css';
+import { t } from '../i18n/ui';
 import { site } from '../config/site';
 import type { Lang } from '../i18n/routes';
 import { absoluteUrl, alternates as hreflangs, ogLocale } from '../lib/seo';
@@ -59,6 +60,7 @@ const links = noindex ? [] : hreflangs({ alternates });
     {jsonLd.map((ld) => <script type="application/ld+json" set:html={JSON.stringify(ld).replace(/</g, '\\u003c')} />)}
   </head>
   <body>
+    <a class="skip-link" href="#main">{t(lang, 'nav.skip')}</a>
     <Header lang={lang} path={path} alternates={alternates} />
     <main id="main">
       <slot />
