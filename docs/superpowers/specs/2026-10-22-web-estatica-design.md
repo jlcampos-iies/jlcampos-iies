@@ -35,7 +35,7 @@ Mantenimiento: el titular edita Markdown en el repo pocas veces al año (o lo pi
 
 DNS: zona pública alojada en **Route 53** (confirmado en la consola; 17 registros):
 - Apex: A `3.133.180.219`; MX `mx01/mx02.mail.icloud.com`; NS/SOA; TXT `apple-domain=…`, `firebase=gesnormauth`, `v=spf1 include:icloud.com include:_spf.firebasemail.com ~all` y otro TXT de verificación.
-- `www` → apex.
+- `www` CNAME → `jlc-ingenieros.com` (TTL 300).
 - `areaprivada` (A `3.12.236.157` y un TXT), `demo` (A `3.12.236.157`) y `met` (A `3.12.236.157`).
 - `_dmarc` TXT `v=DMARC1; p=none;`.
 - DKIM: `sig1._domainkey` (iCloud), `firebase1._domainkey` y `firebase2._domainkey` (Firebase), y tres `<token>._domainkey` de **Amazon SES Easy DKIM**: ya existe una identidad SES del dominio en alguna región, usada por el área privada.
@@ -153,11 +153,10 @@ Las páginas "gracias" y la 404 llevan `noindex`.
 - **Migración de contenido:** extracción del HTML público a Markdown con *front-matter* y descarga de las imágenes de `uploads`. Se revisa a mano el texto final (eliminando restos del constructor visual).
 - **Traducciones EN y CA:** las redacta Claude a partir del castellano con terminología técnica correcta; el titular las revisa (sobre todo el catalán).
 - **Textos legales** (redactados por Claude, revisados por el titular), en los tres idiomas:
-  - Aviso legal (LSSI-CE art. 10): titular José Luis Campos Giménez, NIF 20151498W, C/. Carlos III, 28 Bajo, 07800 Eivissa, jlcampos@jlc-ingenieros.com, (+34) 616 992 440, profesión regulada Ingeniero Industrial (colegio COEIB, título UPV).
+  - Aviso legal (LSSI-CE art. 10): titular José Luis Campos Giménez, NIF 20151498W, C/. Carlos III, 28 Bajo, 07800 Eivissa, jlcampos@jlc-ingenieros.com, (+34) 616 992 440, profesión regulada Ingeniero Industrial (título UPV), colegiado n.º 403 del Col·legi Oficial d'Enginyers Industrials de les Illes Balears (COEIB); normas profesionales: las del COEIB y la normativa estatal de la profesión.
   - Política de privacidad (RGPD/LOPDGDD): tratamiento de los datos del formulario. Finalidad: responder a la consulta. Base jurídica: consentimiento. Encargados: AWS (UE, París) y Cloudflare (Turnstile). Sin cesiones. Conservación: la del hilo de correo. Derechos ejercibles ante info@jlc-ingenieros.com, con reclamación ante la AEPD (coherente con lo que ya usa el área privada).
   - Política de cookies: solo almacenamiento técnico; Turnstile en la página de contacto.
   - Términos y condiciones: actualización del texto actual.
-  - **Dato pendiente que debe aportar el titular:** número de colegiado del COEIB.
 
 ## 6. Formulario de contacto
 
@@ -197,17 +196,17 @@ Pila CloudFormation/SAM `jlc-web-publica` en `eu-west-3`, más una pila pequeña
 | Proveedor OIDC | Parámetro `ExistingGitHubOidcProviderArn`: si se informa, se reutiliza; si va vacío, se crea |
 | Presupuesto | AWS Budget mensual de 5 USD con aviso por correo a jlcampos@jlc-ingenieros.com al 80 % y al 100 % |
 
-La plantilla **no** crea ni modifica registros DNS. Los registros nuevos (validación de ACM, DKIM) y el cambio del apex y de `www` en el corte se hacen con comandos documentados (`scripts/dns/*.json` para `aws route53 change-resource-record-sets` con `UPSERT` solo sobre esos nombres), revisados antes de ejecutarse.
+La plantilla **no** crea ni modifica registros DNS. Los registros nuevos (validación de ACM, DKIM) y el cambio del registro A del apex en el corte se hacen con comandos documentados (`scripts/dns/*.json` para `aws route53 change-resource-record-sets` con `UPSERT` solo sobre esos nombres), revisados antes de ejecutarse.
 
 **Despliegue inicial:** lo ejecuta el titular con sus credenciales (`sam deploy` / `aws cloudformation deploy`), siguiendo `infra/README.md`. Claude no tiene acceso a la cuenta AWS.
 
 ## 8. Aislamiento del área privada (requisito nº 1)
 
 1. Pilas propias; ningún recurso existente se importa, modifica ni referencia (EC2 del área privada, security groups, VPC, IAM ajeno, nginx, identidad SES existente). La instancia Lightsail de WordPress solo se toca en la retirada planificada (§10).
-2. La zona de Route 53 no la gestiona la plantilla. Solo se **añaden** registros nuevos de nombre único y se **cambian** `jlc-ingenieros.com` (solo el registro A; MX, TXT, NS y SOA del apex no se tocan) y `www.jlc-ingenieros.com`. Lista de registros que **no se tocan nunca**: `areaprivada` (A y TXT), `demo`, `met`, MX, todos los TXT del apex (Apple, Firebase, SPF y verificación), `_dmarc`, todos los `*._domainkey` existentes (iCloud, Firebase y SES), NS y SOA. El DMARC existente (`p=none`) no se modifica.
+2. La zona de Route 53 no la gestiona la plantilla. Solo se **añaden** registros nuevos de nombre único y se **cambia un único registro**: el A de `jlc-ingenieros.com` (MX, TXT, NS y SOA del apex no se tocan), y se añade un AAAA ALIAS en el apex. `www` (CNAME → apex) **no se toca**: sigue al apex por sí solo. Lista de registros que **no se tocan nunca**: `areaprivada` (A y TXT), `demo`, `met`, MX, todos los TXT del apex (Apple, Firebase, SPF y verificación), `_dmarc`, todos los `*._domainkey` existentes (iCloud, Firebase y SES), NS y SOA. El DMARC existente (`p=none`) no se modifica.
 3. SES no altera el SPF (MAIL FROM por defecto) ni la identidad SES existente (ver §6).
 4. Proveedor OIDC reutilizado si ya existe.
-5. **`scripts/check-isolation.sh`**: guarda una foto (`dig`/DoH) de todos los registros del dominio salvo apex y `www`, y la compara con una tomada antes. Comprueba que `areaprivada`, `demo` y `met` resuelven a `3.12.236.157`, que `https://areaprivada.jlc-ingenieros.com/` responde 200 y que `/api/gesnorm` responde (cualquier código distinto de 5xx o de un error de conexión). Se ejecuta antes y después de cada paso que toque DNS. Si detecta cualquier diferencia, ese paso se detiene y se deshace.
+5. **`scripts/check-isolation.sh`**: guarda una foto (`dig`/DoH) de todos los registros del dominio salvo los registros A/AAAA del apex, y la compara con una tomada antes. Comprueba que `areaprivada`, `demo` y `met` resuelven a `3.12.236.157`, que `https://areaprivada.jlc-ingenieros.com/` responde 200 y que `/api/gesnorm` responde (cualquier código distinto de 5xx o de un error de conexión). Se ejecuta antes y después de cada paso que toque DNS. Si detecta cualquier diferencia, ese paso se detiene y se deshace.
 
 ## 9. CI/CD (GitHub Actions)
 
@@ -230,15 +229,15 @@ La plantilla **no** crea ni modifica registros DNS. Los registros nuevos (valida
 4. Configuración de Turnstile (dominio `jlc-ingenieros.com` + dominio de CloudFront de pruebas) y verificación en SES de `jlcampos@jlc-ingenieros.com`.
 5. Revisión completa por el titular en la URL de pruebas, incluido un envío real del formulario.
 6. Copia de seguridad de WordPress: **snapshot de la instancia Lightsail** y descarga de `wp-content/uploads` y de una exportación WXR.
-7. TTL de apex y `www` a 60 s, 24 h antes del corte; `check-isolation.sh`.
+7. TTL del registro A del apex a 60 s, 24 h antes del corte (`www` es un CNAME al apex y no necesita cambios); `check-isolation.sh`.
 
 **Corte (unos 5 min, en una franja de poco tráfico):**
 8. Se asignan los alias `jlc-ingenieros.com` y `www` a la distribución con el certificado ACM.
-9. `UPSERT` de apex (A/AAAA ALIAS → CloudFront) y de `www` (A/AAAA ALIAS → CloudFront; la Function redirige a apex).
+9. Un único lote de Route 53: `UPSERT` del A del apex (de `3.133.180.219` a ALIAS → CloudFront) y `CREATE` del AAAA ALIAS → CloudFront. `www` no cambia: su CNAME resuelve ya a CloudFront, que lo tiene como dominio alternativo, y la Function lo redirige al apex.
 10. `check-isolation.sh` y una batería de humo: home en los 3 idiomas, 6 proyectos, 301 de `/en/home/`, `/ca/inici/`, `www` y `/feed/`, 404 de `/wp-login.php`, formulario y cabeceras de seguridad.
 11. Search Console: envío del sitemap e inspección de las URLs principales. Se restaura el TTL a 300 s pasadas 48 h sin incidencias.
 
-**Vuelta atrás:** `UPSERT` de apex y `www` a sus valores originales (A `3.133.180.219` y `www` → apex), con efecto en ≈ 1 min. WordPress sigue encendido hasta el paso 13.
+**Vuelta atrás:** un único lote: `UPSERT` del A del apex a `3.133.180.219` (TTL 60) y `DELETE` del AAAA ALIAS, con efecto en ≈ 1 min. WordPress sigue encendido hasta el paso 13.
 
 **Retirada de WordPress:**
 12. El titular comprueba en la instancia Lightsail (`3.133.180.219`) que no aloja nada más (*vhosts* de Apache, *crontab*, servicios en escucha, otros dominios), con la lista de `docs/retirada-wordpress.md`.
