@@ -8,7 +8,7 @@
   },
   "scripts": {
     "build": "astro check && astro build",
-    "test:unit": "vitest run tests/unit --passWithNoTests",
+    "test:unit": "astro sync && vitest run tests/unit --passWithNoTests",
     "test:dist": "vitest run tests/dist",
     "test": "npm run build && npm run test:unit && npm run test:dist"
   },
@@ -17,9 +17,13 @@
     "astro": "^7.4.1",
     "node-html-parser": "^9.0.5",
     "typescript": "^6.0.3",
-    "vitest": "^5.0.5"
+    "vitest": "^5.0.5",
+    "yaml": "^2.9.1"
   },
   "devDependencies": {
-    "@types/node": "^22.20.5"
+    "@types/node": "^22.20.5",
+    "@types/turndown": "^5.0.6",
+    "sharp": "^0.35.5",
+    "turndown": "^7.2.4"
   }
 }
