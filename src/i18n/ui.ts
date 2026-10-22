@@ -1,0 +1,93 @@
+import type { Lang } from './routes';
+
+const es = {
+  'nav.home': 'Inicio',
+  'nav.studio': 'Estudio',
+  'nav.clients': 'Clientes',
+  'nav.projects': 'Proyectos',
+  'nav.publications': 'Publicaciones',
+  'nav.contact': 'Contacto',
+  'nav.privateArea': 'Área privada',
+  'nav.language': 'Idioma',
+  'cta.viewProjects': 'Ver proyectos',
+  'form.name': 'Nombre',
+  'form.email': 'Correo electrónico',
+  'form.phone': 'Teléfono',
+  'form.message': 'Mensaje',
+  'form.privacy': 'He leído y acepto la política de privacidad',
+  'form.submit': 'Enviar',
+  'error.validation': 'Revisa los campos del formulario e inténtalo de nuevo.',
+  'error.captcha': 'No se ha podido verificar el captcha. Inténtalo de nuevo.',
+  'error.send': 'No se ha podido enviar el mensaje. Inténtalo de nuevo más tarde.',
+  'error.network': 'Error de conexión. Comprueba tu red e inténtalo de nuevo.',
+  'footer.legalNotice': 'Aviso legal',
+  'footer.privacy': 'Política de privacidad',
+  'footer.cookies': 'Política de cookies',
+  'footer.terms': 'Términos y condiciones',
+  'notFound.title': 'Página no encontrada',
+  'notFound.text': 'La página que buscas no existe o ha cambiado de dirección.',
+} as const;
+
+export type UiKey = keyof typeof es;
+
+const en: Record<UiKey, string> = {
+  'nav.home': 'Home',
+  'nav.studio': 'Studio',
+  'nav.clients': 'Clients',
+  'nav.projects': 'Projects',
+  'nav.publications': 'Publications',
+  'nav.contact': 'Contact',
+  'nav.privateArea': 'Private area',
+  'nav.language': 'Language',
+  'cta.viewProjects': 'View projects',
+  'form.name': 'Name',
+  'form.email': 'Email',
+  'form.phone': 'Phone',
+  'form.message': 'Message',
+  'form.privacy': 'I have read and accept the privacy policy',
+  'form.submit': 'Send',
+  'error.validation': 'Please check the form fields and try again.',
+  'error.captcha': 'The captcha could not be verified. Please try again.',
+  'error.send': 'The message could not be sent. Please try again later.',
+  'error.network': 'Connection error. Check your network and try again.',
+  'footer.legalNotice': 'Legal notice',
+  'footer.privacy': 'Privacy policy',
+  'footer.cookies': 'Cookie policy',
+  'footer.terms': 'Terms and conditions',
+  'notFound.title': 'Page not found',
+  'notFound.text': 'The page you are looking for does not exist or has moved.',
+};
+
+const ca: Record<UiKey, string> = {
+  'nav.home': 'Inici',
+  'nav.studio': 'Estudi',
+  'nav.clients': 'Clients',
+  'nav.projects': 'Projectes',
+  'nav.publications': 'Publicacions',
+  'nav.contact': 'Contacte',
+  'nav.privateArea': 'Àrea privada',
+  'nav.language': 'Idioma',
+  'cta.viewProjects': 'Veure projectes',
+  'form.name': 'Nom',
+  'form.email': 'Correu electrònic',
+  'form.phone': 'Telèfon',
+  'form.message': 'Missatge',
+  'form.privacy': "He llegit i accepto la política de privacitat",
+  'form.submit': 'Enviar',
+  'error.validation': 'Revisa els camps del formulari i torna-ho a provar.',
+  'error.captcha': "No s'ha pogut verificar el captcha. Torna-ho a provar.",
+  'error.send': "No s'ha pogut enviar el missatge. Torna-ho a provar més tard.",
+  'error.network': 'Error de connexió. Comprova la xarxa i torna-ho a provar.',
+  'footer.legalNotice': 'Avís legal',
+  'footer.privacy': 'Política de privacitat',
+  'footer.cookies': 'Política de galetes',
+  'footer.terms': 'Termes i condicions',
+  'notFound.title': 'Pàgina no trobada',
+  'notFound.text': "La pàgina que busques no existeix o ha canviat d'adreça.",
+};
+
+export const UI: Record<Lang, Record<UiKey, string>> = { es, en, ca };
+
+export function t(lang: Lang, key: UiKey): string {
+  return UI[lang][key];
+}
