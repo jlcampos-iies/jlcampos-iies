@@ -1,0 +1,17 @@
+---
+// Temporal: solo genera "/". Las tareas posteriores lo sustituyen por allRoutes().
+export function getStaticPaths() {
+  return [{ params: { path: undefined } }];
+}
+---
+<!doctype html>
+<html lang="es">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>JLC Ingenieros</title>
+  </head>
+  <body>
+    <h1>JLC Ingenieros</h1>
+  </body>
+</html>
