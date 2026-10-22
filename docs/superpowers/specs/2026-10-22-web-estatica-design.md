@@ -112,7 +112,7 @@ Proyectos (`/proyectos/…`, `/en/projects/…`, `/ca/projectes/…`):
 | `nave-industrial` | `industrial-building` | `nau-industrial` |
 | `apartamentos-turisticos` | `tourist-apartments` | `apartaments-turistics` |
 
-Las páginas "gracias" y la 404 llevan `noindex`.
+Las páginas "gracias" y la 404 llevan `noindex`. La 404 es **una sola página trilingüe** (`/404.html`, ES/EN/CA en bloques), porque CloudFront solo admite una página de error por distribución.
 
 ### 4.1 Redirecciones 301 (`redirects/map.json`)
 
@@ -168,7 +168,7 @@ Las páginas "gracias" y la 404 llevan `noindex`.
 1. Acepta solo `POST` con `application/x-www-form-urlencoded` o `application/json` y cuerpo ≤ 16 KB.
 2. Si el campo trampa tiene contenido, responde éxito sin enviar nada.
 3. Valida campos y longitudes; si falla → 400 / `error=validation`.
-4. Verifica el token con `https://challenges.cloudflare.com/turnstile/v0/siteverify` (secreto en variable de entorno cifrada, cargada desde un parámetro `SecureString` de SSM; nunca en el repo). Si falla → 403 / `error=captcha`.
+4. Verifica el token con `https://challenges.cloudflare.com/turnstile/v0/siteverify` (el secreto se lee al arrancar la Lambda del parámetro `SecureString` de SSM `/jlc-web-publica/turnstile-secret`; nunca está en el repo). Si falla → **400** / `error=captcha`. No se usa 403, porque CloudFront convierte los 403 en la página 404.
 5. Envía con SES `SendEmail`: From `JLC Ingenieros web <web@jlc-ingenieros.com>`, To `jlcampos@jlc-ingenieros.com`, Reply-To el email del visitante (validado; sin saltos de línea), asunto `[Web] Contacto de <nombre>`, cuerpo en texto plano con los campos, idioma y fecha.
 6. Si SES falla → 502 / `error=send`.
 7. Logs: solo el resultado y el código de error, sin datos personales. Retención de logs: 30 días.
