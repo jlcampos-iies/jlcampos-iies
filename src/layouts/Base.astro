@@ -1,0 +1,68 @@
+---
+import '../styles/global.css';
+import { site } from '../config/site';
+import type { Lang } from '../i18n/routes';
+import { absoluteUrl, alternates as hreflangs, ogLocale } from '../lib/seo';
+import Header from '../components/Header.astro';
+import Footer from '../components/Footer.astro';
+
+interface Props {
+  lang: Lang;
+  title: string;
+  description: string;
+  path: string;
+  alternates: Partial<Record<Lang, string>>;
+  noindex?: boolean;
+  ogImage?: string;
+  jsonLd?: object[];
+}
+const {
+  lang,
+  title,
+  description,
+  path,
+  alternates,
+  noindex = false,
+  ogImage = '/img/5d4357cd2202063847c51de4-img-IMG_0171.jpeg',
+  jsonLd = [],
+} = Astro.props;
+
+const fullTitle = title.includes(site.name) ? title : `${title} | ${site.name}`;
+const canonical = absoluteUrl(path);
+const image = absoluteUrl(ogImage);
+// Las páginas noindex no declaran hreflang.
+const links = noindex ? [] : hreflangs({ alternates });
+---
+<!doctype html>
+<html lang={lang}>
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>{fullTitle}</title>
+    <meta name="description" content={description} />
+    {noindex && <meta name="robots" content="noindex" />}
+    <link rel="canonical" href={canonical} />
+    {links.map((l) => <link rel="alternate" hreflang={l.hreflang} href={l.href} />)}
+    <link rel="icon" href="/favicon.ico" sizes="32x32" />
+    <link rel="apple-touch-icon" href="/apple-touch-icon.png" />
+    <meta property="og:type" content="website" />
+    <meta property="og:site_name" content={site.name} />
+    <meta property="og:title" content={fullTitle} />
+    <meta property="og:description" content={description} />
+    <meta property="og:url" content={canonical} />
+    <meta property="og:image" content={image} />
+    <meta property="og:locale" content={ogLocale(lang)} />
+    <meta name="twitter:card" content="summary_large_image" />
+    <meta name="twitter:title" content={fullTitle} />
+    <meta name="twitter:description" content={description} />
+    <meta name="twitter:image" content={image} />
+    {jsonLd.map((ld) => <script type="application/ld+json" set:html={JSON.stringify(ld).replace(/</g, '\\u003c')} />)}
+  </head>
+  <body>
+    <Header lang={lang} path={path} alternates={alternates} />
+    <main id="main">
+      <slot />
+    </main>
+    <Footer lang={lang} />
+  </body>
+</html>

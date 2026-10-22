@@ -1,0 +1,64 @@
+---
+import { Image } from 'astro:assets';
+import logo from '../assets/brand/jlc.png';
+import { site } from '../config/site';
+import { pagePath, type Lang, type PageKey } from '../i18n/routes';
+import { t, type UiKey } from '../i18n/ui';
+import LangSwitcher from './LangSwitcher.astro';
+
+interface Props {
+  lang: Lang;
+  path: string;
+  alternates: Partial<Record<Lang, string>>;
+}
+const { lang, path, alternates } = Astro.props;
+
+const items: { key: PageKey; label: UiKey }[] = [
+  { key: 'home', label: 'nav.home' },
+  { key: 'studio', label: 'nav.studio' },
+  { key: 'clients', label: 'nav.clients' },
+  { key: 'projects', label: 'nav.projects' },
+  { key: 'publications', label: 'nav.publications' },
+  { key: 'contact', label: 'nav.contact' },
+];
+const current = (key: PageKey) => {
+  const href = pagePath(key, lang);
+  return key === 'home' ? path === href : path.startsWith(href);
+};
+---
+<header class="site-header">
+  <div class="container site-header__bar">
+    <a class="site-header__logo" href={pagePath('home', lang)} aria-label={site.name}>
+      <Image src={logo} alt={site.name} width={52} height={48} loading="eager" />
+    </a>
+    <button
+      type="button"
+      class="menu-toggle"
+      data-menu-toggle
+      aria-expanded="false"
+      aria-controls="site-menu"
+    >
+      {t(lang, 'nav.menu')}
+    </button>
+    <div class="site-header__panel" id="site-menu">
+      <nav class="site-nav" aria-label={site.name}>
+        <ul>
+          {
+            items.map(({ key, label }) => (
+              <li>
+                <a href={pagePath(key, lang)} aria-current={current(key) ? 'page' : undefined}>
+                  {t(lang, label)}
+                </a>
+              </li>
+            ))
+          }
+        </ul>
+      </nav>
+      <LangSwitcher lang={lang} alternates={alternates} />
+      <a class="btn-private" href={site.areaPrivadaUrl}>{t(lang, 'nav.privateArea')}</a>
+    </div>
+  </div>
+</header>
+<script>
+  import '../scripts/menu.ts';
+</script>

@@ -7,4 +7,6 @@ export default defineConfig({
   cacheDir: './.astro',
   trailingSlash: 'always',
   build: { format: 'directory', inlineStylesheets: 'never' },
+  // Sin scripts ni data: URIs en línea (CSP script-src 'self'): el script de menu.ts se emite como archivo.
+  vite: { build: { assetsInlineLimit: 0 } },
 });

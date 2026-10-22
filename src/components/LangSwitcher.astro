@@ -1,0 +1,28 @@
+---
+import { LANGS, type Lang } from '../i18n/routes';
+import { t } from '../i18n/ui';
+
+interface Props {
+  lang: Lang;
+  alternates: Partial<Record<Lang, string>>;
+}
+const { lang, alternates } = Astro.props;
+const available = LANGS.filter((l) => alternates[l]);
+---
+{
+  available.length > 1 && (
+    <nav class="lang-switcher" aria-label={t(lang, 'nav.language')}>
+      <ul>
+        {available.map((l) => (
+          <li>
+            {l === lang ? (
+              <span aria-current="true" lang={l}>{l.toUpperCase()}</span>
+            ) : (
+              <a href={alternates[l]} hreflang={l} lang={l}>{l.toUpperCase()}</a>
+            )}
+          </li>
+        ))}
+      </ul>
+    </nav>
+  )
+}

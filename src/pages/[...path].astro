@@ -1,17 +1,41 @@
 ---
-// Temporal: solo genera "/". Las tareas posteriores lo sustituyen por allRoutes().
-export function getStaticPaths() {
-  return [{ params: { path: undefined } }];
+import { getCollection } from 'astro:content';
+import Base from '../layouts/Base.astro';
+import { allRoutes } from '../lib/registry';
+import { jsonLdOrganization } from '../lib/seo';
+
+export async function getStaticPaths() {
+  const [routes, pages, projects] = await Promise.all([
+    allRoutes(),
+    getCollection('pages'),
+    getCollection('projects'),
+  ]);
+  return routes.map((route) => {
+    const entry =
+      route.kind === 'page'
+        ? pages.find((p) => p.data.key === route.key && p.data.lang === route.lang)
+        : projects.find((p) => p.data.translationKey === route.key && p.data.lang === route.lang);
+    if (!entry) throw new Error(`Sin contenido para ${route.path}`);
+    return {
+      params: { path: route.path.replace(/^\/|\/$/g, '') || undefined },
+      props: { route, title: entry.data.title, description: entry.data.description },
+    };
+  });
 }
+
+const { route, title, description } = Astro.props;
+const jsonLd = route.kind === 'page' && route.key === 'home' ? [jsonLdOrganization(route.lang)] : [];
 ---
-<!doctype html>
-<html lang="es">
-  <head>
-    <meta charset="utf-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1" />
-    <title>JLC Ingenieros</title>
-  </head>
-  <body>
-    <h1>JLC Ingenieros</h1>
-  </body>
-</html>
+<Base
+  lang={route.lang}
+  title={title}
+  description={description}
+  path={route.path}
+  alternates={route.alternates}
+  noindex={route.noindex}
+  jsonLd={jsonLd}
+>
+  <div class="container page-content">
+    <h1>{title}</h1>
+  </div>
+</Base>
