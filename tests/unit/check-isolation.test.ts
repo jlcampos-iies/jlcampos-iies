@@ -54,12 +54,17 @@ function zone(): Zone {
   };
 }
 
-type Fake = { zone: Zone; homeStatus: number; apiStatus: number; dohStatus: number };
+type Fake = { zone: Zone; homeStatus: number; apiStatus: number; dohStatus: number; dohFailures: number };
 
 function fakeServer(state: Fake): Promise<Server> {
   const server = createServer((req, res) => {
     const url = new URL(req.url ?? '/', 'http://x');
     if (url.pathname === '/resolve') {
+      if (state.dohFailures > 0) {
+        state.dohFailures--;
+        res.writeHead(503).end('busy');
+        return;
+      }
       if (state.dohStatus !== 200) {
         res.writeHead(state.dohStatus).end('error');
         return;
@@ -103,7 +108,7 @@ afterEach(() => {
 });
 
 async function setup(overrides: Partial<Fake> = {}) {
-  const state: Fake = { zone: zone(), homeStatus: 200, apiStatus: 401, dohStatus: 200, ...overrides };
+  const state: Fake = { zone: zone(), homeStatus: 200, apiStatus: 401, dohStatus: 200, dohFailures: 0, ...overrides };
   const server = await fakeServer(state);
   const dir = mkdtempSync(join(tmpdir(), 'isolation-'));
   cleanup.push(() => server.close(), () => rmSync(dir, { recursive: true, force: true }));
@@ -115,6 +120,8 @@ async function setup(overrides: Partial<Fake> = {}) {
     ISOLATION_BASELINE: baseline,
     ISOLATION_HOME_URL: `${base}/home/`,
     ISOLATION_API_URL: `${base}/api/gesnorm`,
+    ISOLATION_RETRIES: '2',
+    ISOLATION_DELAY: '0',
   };
   const run = (...args: string[]) =>
     new Promise<{ code: number | null; out: string }>((resolve) => {
@@ -200,6 +207,15 @@ describe('scripts/check-isolation.sh', () => {
     const { code, out } = await run('--compare');
     expect(code).toBe(1);
     expect(out).toMatch(/FAIL .*api\/gesnorm/);
+  });
+
+  it('reintenta: tolera un fallo pasajero del DoH', async () => {
+    const { state, run } = await setup();
+    expect((await run('--snapshot')).code).toBe(0);
+    state.dohFailures = 1;
+    const { code, out } = await run('--compare');
+    expect(out).not.toContain('FAIL');
+    expect(code).toBe(0);
   });
 
   it('--snapshot no escribe la foto si el DoH falla', async () => {

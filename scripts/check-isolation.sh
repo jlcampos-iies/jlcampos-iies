@@ -10,7 +10,11 @@
 # Imprime "OK|FAIL <comprobacion>" por linea y un resumen final.
 # Sale con 0 si todo esta bien, 1 si hay diferencias o falla algo, 2 si el uso es incorrecto.
 # Solo lectura: no modifica ningun registro ni ningun servidor. Necesita bash y curl.
+# Cada consulta y cada peticion HTTP se reintenta ISOLATION_RETRIES veces (defecto 3) esperando
+# ISOLATION_DELAY segundos (defecto 2), para no confundir un fallo de red pasajero con un cambio.
 # Variables (para pruebas): ISOLATION_DOH, ISOLATION_BASELINE, ISOLATION_HOME_URL, ISOLATION_API_URL.
+# Las funciones de consulta y comprobacion se invocan de forma indirecta a traves de retry.
+# shellcheck disable=SC2329
 set -u
 export LC_ALL=C
 
@@ -20,6 +24,8 @@ DOH=${ISOLATION_DOH:-https://dns.google/resolve}
 BASELINE=${ISOLATION_BASELINE:-$(dirname "$0")/dns/baseline.txt}
 HOME_URL=${ISOLATION_HOME_URL:-https://areaprivada.jlc-ingenieros.com/}
 API_URL=${ISOLATION_API_URL:-https://areaprivada.jlc-ingenieros.com/api/gesnorm}
+RETRIES=${ISOLATION_RETRIES:-3}
+DELAY=${ISOLATION_DELAY:-2}
 
 # Registros protegidos: "<nombre relativo (@ = apex)> <tipo>".
 QUERIES='@ MX
@@ -87,7 +93,7 @@ query() {
     *'"Answer":['*) ;;
     *) echo "$qname $qtype (sin registros)"; return 0 ;;
   esac
-  rest=${json#*\"Answer\":[}
+  rest=${json#*\"Answer\":\[}
   found=0
   while IFS= read -r obj; do
     [ -n "$obj" ] || continue
@@ -102,12 +108,28 @@ $(printf '%s' "$rest" | grep -oE "^($OBJ,?)*" | grep -oE "$OBJ")
 EOF
   [ "$found" -eq 1 ] || echo "$qname $qtype (sin registros)"
 }
+query_to() { # query_to <fichero> <fqdn> <tipo>
+  out=$1
+  shift
+  query "$@" >"$out"
+}
+
+# retry <comando...>: ejecuta hasta que devuelva 0, como mucho RETRIES veces.
+retry() {
+  n=1
+  while :; do
+    "$@" && return 0
+    [ "$n" -ge "$RETRIES" ] && return 1
+    n=$((n + 1))
+    sleep "$DELAY"
+  done
+}
 
 # 1. Foto actual del DNS.
 : >"$TMP/current"
 while read -r rel qtype; do
   if [ "$rel" = "@" ]; then fqdn=$DOMAIN; else fqdn="$rel.$DOMAIN"; fi
-  if query "$fqdn" "$qtype" >"$TMP/q"; then
+  if retry query_to "$TMP/q" "$fqdn" "$qtype"; then
     cat "$TMP/q" >>"$TMP/current"
     [ "$qtype" = A ] && cp "$TMP/q" "$TMP/a-${rel}"
   else
@@ -139,15 +161,17 @@ done
 
 http_code() {
   c=$(curl -sS -o /dev/null --max-time 20 -w '%{http_code}' "$1" 2>/dev/null) || c=000
-  echo "$c"
+  echo "$c" >"$TMP/code"
 }
-code=$(http_code "$HOME_URL")
-rc=0
-[ "$code" = 200 ] || rc=1
-report $rc "area privada: GET $HOME_URL -> 200 (ahora: $code)"
-code=$(http_code "$API_URL")
-case "$code" in 000 | 5*) rc=1 ;; *) rc=0 ;; esac
-report $rc "API del area privada: GET $API_URL -> sin 5xx ni error de conexion (ahora: $code)"
+home_ok() { http_code "$HOME_URL" && [ "$(cat "$TMP/code")" = 200 ]; }
+api_ok() {
+  http_code "$API_URL"
+  case "$(cat "$TMP/code")" in 000 | 5*) return 1 ;; *) return 0 ;; esac
+}
+retry home_ok
+report $? "area privada: GET $HOME_URL -> 200 (ahora: $(cat "$TMP/code"))"
+retry api_ok
+report $? "API del area privada: GET $API_URL -> sin 5xx ni error de conexion (ahora: $(cat "$TMP/code"))"
 
 # 4. Resultado.
 if [ "$FAILED" -ne 0 ]; then
