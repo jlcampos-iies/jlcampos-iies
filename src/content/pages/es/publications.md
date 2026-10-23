@@ -4,6 +4,7 @@ lang: "es"
 title: "Publicaciones"
 description: "Publicaciones y materiales didácticos de JLC Ingenieros sobre máquinas y equipos térmicos, climatización y refrigeración."
 hero: "../../../assets/images/pages/booksjpg.jpg"
+heroAlt: "Pila de libros y documentación técnica"
 ---
 
 Adicionalmente, combinando la actividad profesional en el ámbito privado con la **docencia y la divulgación científica**, intercambiando multitud de documentación de carácter técnico con otros profesionales y empresas relacionadas con dicho sector.

@@ -2,6 +2,7 @@
 import { Picture } from 'astro:assets';
 import { render, type CollectionEntry } from 'astro:content';
 import Gallery from '../components/Gallery.astro';
+import { projectImages } from '../lib/project-images';
 import { pagePath } from '../i18n/routes';
 import { t } from '../i18n/ui';
 
@@ -9,24 +10,21 @@ interface Props {
   entry: CollectionEntry<'projects'>;
 }
 const { entry } = Astro.props;
-const { title, cover, gallery = [], lang } = entry.data;
+const { title, lang } = entry.data;
+const { cover, gallery } = await projectImages(entry);
 const { Content } = await render(entry);
 ---
 <article class="container page-content prose">
   <h1>{title}</h1>
-  {
-    cover && (
-      <Picture
-        class="project__cover"
-        src={cover}
-        formats={['avif', 'webp']}
-        widths={[400, 800, 1200]}
-        sizes="(min-width: 1152px) 1152px, 100vw"
-        alt={title}
-        loading="eager"
-      />
-    )
-  }
+  <Picture
+    class="project__cover"
+    src={cover}
+    formats={['avif', 'webp']}
+    widths={[400, 800, 1200]}
+    sizes="(min-width: 1152px) 1152px, 100vw"
+    alt={title}
+    loading="eager"
+  />
   <Content />
   {gallery.length > 0 && <Gallery images={gallery} title={title} />}
   <p><a href={pagePath('projects', lang)}>&larr; {t(lang, 'project.back')}</a></p>

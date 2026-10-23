@@ -10,15 +10,21 @@ const pageKeys = Object.keys(PAGE_ROUTES) as [keyof typeof PAGE_ROUTES, ...(keyo
 const pages = defineCollection({
   loader: glob({ pattern: '*/*.md', base: './src/content/pages' }),
   schema: ({ image }) =>
-    z.object({
-      key: z.enum(pageKeys),
-      lang,
-      title: z.string(),
-      description: z.string().max(160),
-      hero: image().optional(),
-      services: z.array(z.object({ title: z.string(), text: z.string() })).optional(),
-      noindex: z.boolean().optional(),
-    }),
+    z
+      .object({
+        key: z.enum(pageKeys),
+        lang,
+        title: z.string(),
+        description: z.string().max(160),
+        hero: image().optional(),
+        heroAlt: z.string().optional(),
+        services: z.array(z.object({ title: z.string(), text: z.string() })).optional(),
+        noindex: z.boolean().optional(),
+      })
+      .refine((p) => p.hero === undefined || (p.heroAlt ?? '').trim() !== '', {
+        message: 'heroAlt es obligatorio cuando hay hero',
+        path: ['heroAlt'],
+      }),
 });
 
 const projects = defineCollection({

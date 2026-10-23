@@ -2,26 +2,24 @@
 import { Picture } from 'astro:assets';
 import type { CollectionEntry } from 'astro:content';
 import { projectPath } from '../i18n/routes';
+import { projectImages } from '../lib/project-images';
 
 interface Props {
   project: CollectionEntry<'projects'>;
 }
 const { data } = Astro.props.project;
+const { cover } = await projectImages(Astro.props.project);
 ---
 <li class="card">
   <a class="card__link" href={projectPath(data.slug, data.lang)}>
-    {
-      data.cover && (
-        <Picture
-          src={data.cover}
-          formats={['avif', 'webp']}
-          widths={[400, 800]}
-          sizes="(min-width: 768px) 33vw, 100vw"
-          alt=""
-          loading="lazy"
-        />
-      )
-    }
+    <Picture
+      src={cover}
+      formats={['avif', 'webp']}
+      widths={[400, 800]}
+      sizes="(min-width: 768px) 33vw, 100vw"
+      alt=""
+      loading="lazy"
+    />
     <h2 class="card__title">{data.title}</h2>
   </a>
 </li>
