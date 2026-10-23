@@ -39,7 +39,8 @@ Los datos se utilizan exclusivamente para atender y responder a su consulta y, e
 
 Los datos no se ceden a terceros, salvo obligación legal. Para prestar el servicio intervienen los siguientes encargados del tratamiento, que actúan siguiendo las instrucciones del responsable y con las garantías exigidas por el artículo 28 del RGPD:
 
-- **Amazon Web Services EMEA SARL** (Luxemburgo): alojamiento del sitio web y procesamiento y envío por correo electrónico de los mensajes del formulario, en servidores ubicados en la Unión Europea (región de París, Francia).
+- **Amazon Web Services EMEA SARL** (Luxemburgo): alojamiento del sitio web y procesamiento y envío por correo electrónico de los mensajes del formulario, principalmente en la Unión Europea (región de París, Francia); la red de distribución de contenidos puede servir las páginas desde el punto más cercano al visitante.
+- **Apple Distribution International Ltd.** (Irlanda): proveedor del correo electrónico (iCloud Mail) en el que se reciben y conservan los mensajes. Para cualquier acceso desde Estados Unidos, Apple Inc. está certificada en el Marco de Privacidad de Datos UE-EE. UU. (EU-U.S. Data Privacy Framework).
 - **Cloudflare, Inc.** (Estados Unidos): verificación antispam del formulario mediante Cloudflare Turnstile. Este servicio puede implicar una transferencia internacional de datos a Estados Unidos, amparada en el Marco de Privacidad de Datos UE-EE. UU. (EU-U.S. Data Privacy Framework), en el que Cloudflare, Inc. está certificada. Más información en la [política de privacidad de Cloudflare](https://www.cloudflare.com/privacypolicy/).
 
 ## 6. Conservación

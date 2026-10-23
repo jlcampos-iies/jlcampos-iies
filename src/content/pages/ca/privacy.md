@@ -39,7 +39,8 @@ Les dades s’utilitzen exclusivament per atendre i respondre la vostra consulta
 
 Les dades no es cedeixen a tercers, llevat d’obligació legal. Per prestar el servei hi intervenen els encarregats del tractament següents, que actuen d’acord amb les instruccions del responsable i amb les garanties que exigeix l’article 28 del RGPD:
 
-- **Amazon Web Services EMEA SARL** (Luxemburg): allotjament del lloc web i processament i enviament per correu electrònic dels missatges del formulari, en servidors situats a la Unió Europea (regió de París, França).
+- **Amazon Web Services EMEA SARL** (Luxemburg): allotjament del lloc web i processament i enviament per correu electrònic dels missatges del formulari, principalment a la Unió Europea (regió de París, França); la xarxa de distribució de continguts pot servir les pàgines des del punt més proper al visitant.
+- **Apple Distribution International Ltd.** (Irlanda): proveïdor del correu electrònic (iCloud Mail) en què es reben i es conserven els missatges. Per a qualsevol accés des dels Estats Units, Apple Inc. està certificada en el Marc de privacitat de dades UE-EUA (EU-U.S. Data Privacy Framework).
 - **Cloudflare, Inc.** (Estats Units): verificació antispam del formulari mitjançant Cloudflare Turnstile. Aquest servei pot implicar una transferència internacional de dades als Estats Units, emparada en el Marc de privacitat de dades UE-EUA (EU-U.S. Data Privacy Framework), en el qual Cloudflare, Inc. està certificada. Més informació a la [política de privacitat de Cloudflare](https://www.cloudflare.com/privacypolicy/).
 
 ## 6. Conservació
@@ -54,7 +55,7 @@ Si considereu que el tractament de les vostres dades no s’ajusta a la normativ
 
 ## 8. Menors d’edat
 
-Aquest lloc web no està adreçat a menors de 14 anys. Si teniu menys d’aquesta edat, no envieu dades personals a través del formulari.
+Aquest lloc web no està adreçat a menors de 14 anys. Si teniu menys de 14 anys, no envieu dades personals a través del formulari.
 
 ## 9. Seguretat
 

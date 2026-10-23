@@ -7,7 +7,7 @@ description: "Solar PV self-consumption installation for a tourist establishment
 order: 4
 ---
 
-**Location:** Mitjorn, Formentera
+**Location:** Migjorn, Formentera
 
 This project involved the implementation of a solar PV self-consumption installation for a tourist establishment, designed to optimise the complex’s energy consumption by harnessing solar energy. One of the distinctive features of this project was the integration of the photovoltaic modules with the existing installations, resulting in a functional and efficient solution perfectly adapted to the pre-existing infrastructure. From the outset, priority was given to careful architectural integration, ensuring that the solar panels blended harmoniously with the building’s design and respected the aesthetics of the surroundings. This approach not only minimised the visual impact but also made the most of the structural and technical resources already available, optimising installation costs and shortening the execution time.
 

@@ -39,7 +39,8 @@ Your data are used solely to deal with and reply to your enquiry and, where appl
 
 Your data are not disclosed to third parties unless required by law. The following processors are involved in providing the service; they act on the controller’s instructions and with the safeguards required by Article 28 GDPR:
 
-- **Amazon Web Services EMEA SARL** (Luxembourg): hosting of the website and processing and delivery by email of the messages sent through the form, on servers located in the European Union (Paris region, France).
+- **Amazon Web Services EMEA SARL** (Luxembourg): hosting of the website and processing and delivery by email of the messages sent through the form, mainly in the European Union (Paris region, France); the content delivery network may serve the pages from the location closest to the visitor.
+- **Apple Distribution International Ltd.** (Ireland): email provider (iCloud Mail) in which the messages are received and stored. For any access from the United States, Apple Inc. is certified under the EU-U.S. Data Privacy Framework.
 - **Cloudflare, Inc.** (United States): spam protection for the form through Cloudflare Turnstile. This service may involve an international transfer of data to the United States, covered by the EU-U.S. Data Privacy Framework, under which Cloudflare, Inc. is certified. For more information, see [Cloudflare’s privacy policy](https://www.cloudflare.com/privacypolicy/).
 
 ## 6. Retention

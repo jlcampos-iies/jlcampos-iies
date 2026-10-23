@@ -297,7 +297,8 @@ links.forEach((href, i) => {
   if (!doc) throw new Error('Proyecto desconocido: ' + s);
   const mc = mainOf(doc);
   const title = metaTitle(doc);
-  const location = mc.querySelector('h1') ? clean(mc.querySelector('h1').text) : null;
+  // Topónimo oficial (Nomenclàtor): la web antigua escribía «Mitjorn».
+  const location = mc.querySelector('h1') ? clean(mc.querySelector('h1').text).replace(/\bMitjorn\b/g, 'Migjorn') : null;
   mc.querySelectorAll('h1').forEach((n) => n.remove());
   const paragraphs = mc.querySelectorAll('p').map((p) => toMd(p.outerHTML)).filter(Boolean);
   const body = [location ? `**Ubicación:** ${location}` : null, ...paragraphs].filter(Boolean).join('\n\n');

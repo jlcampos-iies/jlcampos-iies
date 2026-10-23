@@ -23,7 +23,7 @@ A través del lloc web no es contracten serveis ni es venen productes. La presta
 
 L’usuari es compromet a utilitzar el lloc web de manera lícita, de bona fe i d’acord amb aquests termes. En particular, no està permès:
 
-- dur a terme activitats que danyin el lloc web o n’interfereixin el funcionament, la disponibilitat o la seguretat, ni eludir-ne les mesures de protecció;
+- dur a terme activitats que danyin el lloc web o interfereixin en el seu funcionament, la seva disponibilitat o la seva seguretat, ni eludir-ne les mesures de protecció;
 - introduir o difondre programes o codi maliciós;
 - extreure de manera sistemàtica o automatitzada el contingut del lloc web;
 - utilitzar el formulari de contacte per enviar publicitat no sol·licitada o missatges de contingut il·lícit, ni facilitar dades falses o dades de tercers sense la seva autorització.

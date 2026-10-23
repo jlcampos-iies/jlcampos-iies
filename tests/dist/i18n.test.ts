@@ -31,7 +31,8 @@ const langOfPath = (path: string): Lang =>
 const htmlPages = distFiles()
   .filter((f) => f !== '404.html')
   .map(urlPathOf);
-const isNoindex = (path: string) => readPage(path).querySelector('meta[name=robots]') !== null;
+const isNoindex = (path: string) =>
+  (readPage(path).querySelector('meta[name=robots]')?.getAttribute('content') ?? '').includes('noindex');
 const indexable = htmlPages.filter((p) => !isNoindex(p));
 
 /** hreflang → href de una página ya generada. */
@@ -97,13 +98,17 @@ describe('<html lang> y <h1>', () => {
     expect(h1[0].text.trim()).not.toBe('');
   });
 
-  it('el alt del hero está en el idioma de la página', () => {
-    const alt = (path: string) => readPage(path).querySelector('main img.hero__img')?.getAttribute('alt');
+  it.each([
+    ['home', 'main img.hero__img'],
+    ['studio', 'main img.split__img'],
+  ] as const)('el alt del hero de %s está en el idioma de la página', (key, selector) => {
+    const alt = (lang: Lang) => readPage(PAGE_ROUTES[key][lang]).querySelector(selector)?.getAttribute('alt');
     for (const lang of LANGS) {
-      const home = pages.find((p) => p.data.key === 'home' && p.data.lang === lang)!;
-      expect(alt(PAGE_ROUTES.home[lang]), lang).toBe(home.data.heroAlt);
+      const entry = pages.find((p) => p.data.key === key && p.data.lang === lang)!;
+      expect(entry.data.heroAlt, `${key}/${lang}`).toBeTruthy();
+      expect(alt(lang), `${key}/${lang}`).toBe(entry.data.heroAlt);
     }
-    expect(new Set(LANGS.map((l) => alt(PAGE_ROUTES.home[l]))).size).toBe(3);
+    expect(new Set(LANGS.map(alt)).size).toBe(3);
   });
 });
 
@@ -168,7 +173,7 @@ describe('textos legales', () => {
   it.each(LANGS)('la política de privacidad (%s) nombra responsable, encargados y derechos', (lang) => {
     const t = text(PAGE_ROUTES.privacy[lang]);
     const consent = { es: '6.1.a', en: '6(1)(a)', ca: '6.1.a' }[lang];
-    for (const value of [site.owner.name, site.owner.nif, site.rightsEmail, 'Amazon Web Services EMEA SARL', 'Cloudflare, Inc.', consent, 'www.aepd.es']) {
+    for (const value of [site.owner.name, site.owner.nif, site.rightsEmail, 'Amazon Web Services EMEA SARL', 'Cloudflare, Inc.', 'Apple Distribution International Ltd.', 'iCloud', consent, 'www.aepd.es']) {
       expect(t).toContain(value);
     }
   });
