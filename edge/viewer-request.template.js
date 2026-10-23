@@ -1,6 +1,7 @@
 // CloudFront Function (cloudfront-js-2.0), viewer-request.
 // REDIRECTS y KNOWN los inyecta edge/build.mjs.
 var REDIRECTS = /*REDIRECTS*/{};
+var UPLOADS = /*UPLOADS*/{};
 var KNOWN = /*KNOWN*/'';
 var APEX = 'jlc-ingenieros.com';
 var WP_PARAMS = { p: 1, page_id: 1 };
@@ -12,7 +13,7 @@ function qsPairs(querystring, skipWp) {
     var q = querystring[name];
     var items = q.multiValue && q.multiValue.length ? q.multiValue : [q];
     items.forEach(function (it) {
-      out.push(it.value === '' || it.value === undefined ? name : name + '=' + it.value);
+      out.push(name + '=' + (it.value === undefined ? '' : it.value));
     });
   });
   return out;
@@ -77,6 +78,15 @@ function handler(event) {
   }
 
   // 4. mapa de redirecciones (con y sin barra final)
+  var UP = '/wp-content/uploads/';
+  if (uri.indexOf(UP) === 0) {
+    var cut = uri.lastIndexOf('/');
+    var dir = UPLOADS[uri.slice(UP.length, cut)];
+    var file = uri.slice(cut + 1);
+    if (dir && Object.prototype.hasOwnProperty.call(dir, file)) {
+      return redirect('/img/' + (dir[file] === 1 ? file : dir[file]) + qsString(qs, false));
+    }
+  }
   var key = Object.prototype.hasOwnProperty.call(REDIRECTS, uri)
     ? uri
     : uri.slice(-1) !== '/' && Object.prototype.hasOwnProperty.call(REDIRECTS, uri + '/')

@@ -1,6 +1,7 @@
 import { beforeAll, describe, expect, it } from 'vitest';
 import { execFileSync } from 'node:child_process';
 import { readFileSync } from 'node:fs';
+import { generate, knownRoutes } from '../../edge/build.mjs';
 import { loadHandler, type EdgeHandler } from '../../edge/load';
 
 type Qs = Record<string, { value: string; multiValue?: { value: string }[] }>;
@@ -82,5 +83,45 @@ describe('CloudFront Function viewer-request', () => {
     for (const u of ['/_astro/a.css', '/img/x.jpg', '/sitemap.xml', '/robots.txt', '/404.html', '/api/contact']) {
       expect(handler(ev(u)).uri).toBe(u);
     }
+  });
+
+  it('serializa valores vacios y multiValue de 2 valores', () => {
+    expect(loc(handler(ev('/feed/', { qs: { a: { value: '' } } })))).toBe('/?a=');
+    const qs = { t: { value: 'x', multiValue: [{ value: 'x' }, { value: 'y' }] }, b: { value: '2' } };
+    expect(loc(handler(ev('/feed/', { qs })))).toBe('/?t=x&t=y&b=2');
+  });
+
+  it('uploads con nombre distinto se redirigen al nuevo nombre', () => {
+    const tpl = readFileSync('edge/viewer-request.template.js', 'utf8');
+    const code = generate({ redirects: { '/wp-content/uploads/2020/01/a.jpg': '/img/b.jpg' }, known: ['/'], template: tpl });
+    const h = new Function(code + '; return handler;')();
+    expect(loc(h(ev('/wp-content/uploads/2020/01/a.jpg')))).toBe('/img/b.jpg');
+  });
+});
+
+describe('generador edge', () => {
+  const template = readFileSync('edge/viewer-request.template.js', 'utf8');
+  const redirects = JSON.parse(readFileSync('redirects/map.json', 'utf8')) as Record<string, string>;
+
+  it('ningun destino del mapa es tambien origen', () => {
+    for (const to of Object.values(redirects)) expect(redirects[to], to).toBeUndefined();
+    expect(() => generate({ redirects: { '/a/': '/b/', '/b/': '/c/' }, known: [], template })).toThrow(/encadenado/);
+  });
+
+  it('ningun origen del mapa es una ruta conocida', () => {
+    const known = knownRoutes('dist');
+    for (const from of Object.keys(redirects)) expect(known, from).not.toContain(from.toLowerCase());
+    expect(() => generate({ redirects: { '/estudio/': '/' }, known: ['/estudio/'], template })).toThrow(/ruta existente/);
+  });
+
+  it('falla si el codigo supera 10 KB', () => {
+    const big = Object.fromEntries(Array.from({ length: 400 }, (_, i) => [`/viejo-${i}/`, `/nuevo-${i}/`]));
+    expect(() => generate({ redirects: big, known: [], template })).toThrow(/bytes supera el limite de 10240/);
+  });
+
+  it('el codigo generado no lleva comentarios ni indentacion', () => {
+    const code = generate({ redirects, known: knownRoutes('dist'), template });
+    expect(code).not.toMatch(/^\s*\/\//m);
+    expect(code).not.toMatch(/^[ \t]+/m);
   });
 });
