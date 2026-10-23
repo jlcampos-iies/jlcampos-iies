@@ -7,7 +7,8 @@
     "node": ">=22"
   },
   "scripts": {
-    "build": "astro check && astro build",
+    "build": "astro check && astro build && node edge/build.mjs",
+    "build:edge": "node edge/build.mjs",
     "test:unit": "astro sync && vitest run tests/unit --passWithNoTests",
     "test:dist": "vitest run tests/dist",
     "test": "npm run build && npm run test:unit && npm run test:dist"
