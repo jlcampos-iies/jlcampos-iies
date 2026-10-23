@@ -109,6 +109,7 @@ describe('aislamiento del área privada (requisito nº 1)', () => {
     expect(ids).toHaveLength(1);
     const [, id] = ids[0];
     expect(id.Condition).toBe('CreateSesIdentity');
+    expect(id).toMatchObject({ DeletionPolicy: 'Retain', UpdateReplacePolicy: 'Retain' });
     expect(id.Properties.EmailIdentity).toBe('jlc-ingenieros.com');
     expect(id.Properties.MailFromAttributes).toBeUndefined();
     for (const n of [1, 2, 3]) {
@@ -153,11 +154,15 @@ describe('S3', () => {
 
   it('la política del bucket solo permite a esta distribución (OAC)', () => {
     const st = R('SiteBucketPolicy').Properties.PolicyDocument.Statement;
-    expect(st).toHaveLength(1);
-    expect(st[0].Effect).toBe('Allow');
-    expect(st[0].Principal).toEqual({ Service: 'cloudfront.amazonaws.com' });
-    expect(st[0].Action).toBe('s3:GetObject');
-    expect(JSON.stringify(st[0].Condition.StringEquals['AWS:SourceArn'])).toContain('${Distribution}');
+    const allow = st.filter((s: any) => s.Effect === 'Allow');
+    expect(allow).toHaveLength(1);
+    expect(allow[0].Principal).toEqual({ Service: 'cloudfront.amazonaws.com' });
+    expect(allow[0].Action).toBe('s3:GetObject');
+    expect(JSON.stringify(allow[0].Condition.StringEquals['AWS:SourceArn'])).toContain('${Distribution}');
+    const deny = st.filter((s: any) => s.Effect === 'Deny');
+    expect(deny).toHaveLength(1);
+    expect(deny[0]).toMatchObject({ Principal: '*', Action: 's3:*', Condition: { Bool: { 'aws:SecureTransport': 'false' } } });
+    expect(st).toHaveLength(2);
     const oac = R('SiteOriginAccessControl').Properties.OriginAccessControlConfig;
     expect(oac).toMatchObject({ OriginAccessControlOriginType: 's3', SigningBehavior: 'always', SigningProtocol: 'sigv4' });
   });
@@ -252,8 +257,14 @@ describe('Lambda de contacto', () => {
       Handler: 'index.handler',
       MemorySize: 128,
       Timeout: 10,
-      ReservedConcurrentExecutions: 2,
       FunctionUrlConfig: { AuthType: 'NONE' },
+    });
+    expect(p.ReservedConcurrentExecutions).toEqual({
+      'Fn::If': ['ReserveContactConcurrency', { Ref: 'ContactReservedConcurrency' }, { Ref: 'AWS::NoValue' }],
+    });
+    expect(tpl.Parameters.ContactReservedConcurrency).toMatchObject({ Type: 'Number', Default: 2, MinValue: 0 });
+    expect(tpl.Conditions.ReserveContactConcurrency).toEqual({
+      'Fn::Not': [{ 'Fn::Equals': [{ Ref: 'ContactReservedConcurrency' }, 0] }],
     });
     expect(p.LoggingConfig.LogGroup).toEqual({ Ref: 'ContactLogGroup' });
     expect(R('ContactLogGroup').Properties).toMatchObject({
@@ -312,8 +323,12 @@ describe('despliegue desde GitHub (OIDC)', () => {
       'Fn::Equals': [{ Ref: 'ExistingGitHubOidcProviderArn' }, ''],
     });
     expect(tpl.Conditions.CreateSesIdentity).toEqual({ 'Fn::Equals': [{ Ref: 'CreateSesIdentity' }, 'true'] });
+    expect(tpl.Parameters.ExistingGitHubOidcProviderArn.AllowedPattern).toBe(
+      '^$|^arn:aws:iam::\\d{12}:oidc-provider/token\\.actions\\.githubusercontent\\.com$',
+    );
     const oidc = R('GitHubOidcProvider');
     expect(oidc.Condition).toBe('CreateOidcProvider');
+    expect(oidc).toMatchObject({ DeletionPolicy: 'Retain', UpdateReplacePolicy: 'Retain' });
     expect(oidc.Properties.Url).toBe('https://token.actions.githubusercontent.com');
     expect(oidc.Properties.ClientIdList).toEqual(['sts.amazonaws.com']);
   });
@@ -338,10 +353,12 @@ describe('despliegue desde GitHub (OIDC)', () => {
       's3:DeleteObject': 'SiteBucket',
       'cloudfront:CreateInvalidation': '${Distribution}',
       'cloudfront:DescribeFunction': 'EdgeFunction',
+      'cloudfront:GetFunction': 'EdgeFunction',
       'cloudfront:UpdateFunction': 'EdgeFunction',
       'cloudfront:PublishFunction': 'EdgeFunction',
       'lambda:UpdateFunctionCode': 'ContactFunction',
       'lambda:GetFunction': 'ContactFunction',
+      'lambda:GetFunctionConfiguration': 'ContactFunction',
     };
     const seen = st.flatMap((s: any) => asList(s.Action));
     expect([...seen].sort()).toEqual(Object.keys(expected).sort());

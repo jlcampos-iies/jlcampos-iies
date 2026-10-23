@@ -29,16 +29,24 @@ Parameters:
   ExistingGitHubOidcProviderArn:
     Type: String
     Default: ''
+    AllowedPattern: '^$|^arn:aws:iam::\d{12}:oidc-provider/token\.actions\.githubusercontent\.com$'
+    ConstraintDescription: vacio o el ARN del proveedor OIDC token.actions.githubusercontent.com.
     Description: ARN del proveedor OIDC token.actions.githubusercontent.com si ya existe en la cuenta (se reutiliza). Vacio = se crea.
   TurnstileHostnames:
     Type: String
     Default: jlc-ingenieros.com
     Description: Hostnames aceptados en la respuesta de Turnstile, separados por comas (durante las pruebas, anadir el dominio cloudfront.net).
+  ContactReservedConcurrency:
+    Type: Number
+    Default: 2
+    MinValue: 0
+    Description: Concurrencia reservada de jlc-web-contact. 0 = sin reserva (cuentas con la cuota de concurrencia de Lambda por defecto de 10).
 
 Conditions:
   UseAliases: !Equals [!Ref EnableAliases, 'true']
   CreateSesIdentity: !Equals [!Ref CreateSesIdentity, 'true']
   CreateOidcProvider: !Equals [!Ref ExistingGitHubOidcProviderArn, '']
+  ReserveContactConcurrency: !Not [!Equals [!Ref ContactReservedConcurrency, 0]]
 
 Resources:
   # ---------------------------------------------------------------- S3 (origen privado)
@@ -90,6 +98,16 @@ Resources:
             Condition:
               StringEquals:
                 AWS:SourceArn: !Sub 'arn:aws:cloudfront::${AWS::AccountId}:distribution/${Distribution}'
+          - Sid: SoloHttps
+            Effect: Deny
+            Principal: '*'
+            Action: s3:*
+            Resource:
+              - !GetAtt SiteBucket.Arn
+              - !Sub '${SiteBucket.Arn}/*'
+            Condition:
+              Bool:
+                aws:SecureTransport: 'false'
 
   SiteOriginAccessControl:
     Type: AWS::CloudFront::OriginAccessControl
@@ -277,7 +295,8 @@ Resources:
       Architectures: [arm64]
       MemorySize: 128
       Timeout: 10
-      ReservedConcurrentExecutions: 2
+      # AWS exige que queden al menos 100 ejecuciones sin reservar en la cuenta (ver README).
+      ReservedConcurrentExecutions: !If [ReserveContactConcurrency, !Ref ContactReservedConcurrency, !Ref AWS::NoValue]
       Role: !GetAtt ContactRole.Arn
       LoggingConfig:
         LogGroup: !Ref ContactLogGroup
@@ -324,6 +343,9 @@ Resources:
   SesDomainIdentity:
     Type: AWS::SES::EmailIdentity
     Condition: CreateSesIdentity
+    # Se conserva al borrar la pila: el DKIM publicado en Route 53 sigue apuntando a ella.
+    DeletionPolicy: Retain
+    UpdateReplacePolicy: Retain
     Properties:
       EmailIdentity: jlc-ingenieros.com
       DkimSigningAttributes:
@@ -338,6 +360,9 @@ Resources:
   GitHubOidcProvider:
     Type: AWS::IAM::OIDCProvider
     Condition: CreateOidcProvider
+    # Se conserva al borrar la pila: otros repos o pilas pueden haber empezado a usarlo.
+    DeletionPolicy: Retain
+    UpdateReplacePolicy: Retain
     Properties:
       Url: https://token.actions.githubusercontent.com
       ClientIdList: [sts.amazonaws.com]
@@ -379,11 +404,11 @@ Resources:
                 Resource: !Sub 'arn:aws:cloudfront::${AWS::AccountId}:distribution/${Distribution}'
               - Sid: PublicarFunction
                 Effect: Allow
-                Action: [cloudfront:DescribeFunction, cloudfront:UpdateFunction, cloudfront:PublishFunction]
+                Action: [cloudfront:DescribeFunction, cloudfront:GetFunction, cloudfront:UpdateFunction, cloudfront:PublishFunction]
                 Resource: !GetAtt EdgeFunction.FunctionARN
               - Sid: ActualizarLambda
                 Effect: Allow
-                Action: [lambda:UpdateFunctionCode, lambda:GetFunction]
+                Action: [lambda:UpdateFunctionCode, lambda:GetFunction, lambda:GetFunctionConfiguration]
                 Resource: !GetAtt ContactFunction.Arn
       Tags:
         - Key: project

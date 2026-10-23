@@ -53,7 +53,17 @@ aws sesv2 get-email-identity --email-identity jlc-ingenieros.com --region eu-wes
 aws iam list-open-id-connect-providers
 ```
 
-Si aparece un ARN que termina en `oidc-provider/token.actions.githubusercontent.com`, se pasa como `ExistingGitHubOidcProviderArn` (se reutiliza sin tocarlo). Si no aparece, se deja vacío y la pila lo crea.
+Si aparece un ARN que termina en `oidc-provider/token.actions.githubusercontent.com`, comprobar su audiencia:
+
+```bash
+aws iam get-open-id-connect-provider \
+  --open-id-connect-provider-arn arn:aws:iam::<cuenta>:oidc-provider/token.actions.githubusercontent.com
+```
+
+- Si `ClientIDList` contiene `sts.amazonaws.com`: se pasa como `ExistingGitHubOidcProviderArn` y la pila lo reutiliza sin tocarlo.
+- Si **no** lo contiene: el rol de despliegue no podrá asumirse con ese proveedor. Esta guía no lo modifica: es un recurso IAM existente y puede estar en uso. El titular decide si añadir la audiencia (`aws iam add-client-id-to-open-id-connect-provider --client-id sts.amazonaws.com …`, que solo añade un valor a la lista) después de revisar quién usa ese proveedor. No se puede crear un segundo proveedor con la misma URL en la misma cuenta.
+
+Si no aparece ninguno, `ExistingGitHubOidcProviderArn` se deja vacío y la pila lo crea.
 
 ### 5. Certificado ACM (us-east-1)
 
@@ -74,10 +84,27 @@ echo "$CERT_ARN"
 
 ### 6. Pila principal (París)
 
+**Antes de desplegar, comprobar la cuota de concurrencia de Lambda:**
+
+```bash
+aws lambda get-account-settings --region eu-west-3 --query AccountLimit.ConcurrentExecutions
+```
+
+AWS exige que, después de reservar, queden al menos 100 ejecuciones sin reservar en la cuenta (cuota − reservas ≥ 100). Con el valor normal (1000 o más) no hay nada que hacer. Si devuelve `10` (cuentas nuevas), hay dos opciones:
+
+- desplegar con `ContactReservedConcurrency=0` (sin reserva; la propia cuota de 10 ya limita el gasto), o
+- pedir el aumento en **Service Quotas → AWS Lambda → Concurrent executions** hasta el valor normal (1000) y desplegar cuando se haya aplicado.
+
+**Partir siempre de `main` actualizado**, porque un `sam deploy` manual sube el código local de la Lambda y de la Function, y pisaría lo que haya publicado GitHub Actions:
+
+```bash
+git checkout main && git pull
+```
+
 El build local solo sirve para generar la CloudFront Function (necesita la lista de rutas de `dist/`); la web la publica después GitHub Actions. Por eso basta con la clave de pruebas de Turnstile.
 
 ```bash
-npm ci && PUBLIC_TURNSTILE_SITE_KEY=1x00000000000000000000AA npm run build && npm run build:edge && node infra/render.mjs && \
+npm ci && PUBLIC_TURNSTILE_SITE_KEY=1x00000000000000000000AA npm run build && node infra/render.mjs && \
 sam deploy --template-file infra/build/template.yaml --stack-name jlc-web-publica --region eu-west-3 \
   --capabilities CAPABILITY_IAM --resolve-s3 --confirm-changeset --tags project=jlc-web-publica \
   --parameter-overrides \
@@ -89,7 +116,14 @@ sam deploy --template-file infra/build/template.yaml --stack-name jlc-web-public
 
 - Cambiar `CreateSesIdentity=true` por `false` si en el paso 3 la identidad ya existía.
 - Si en el paso 4 había proveedor OIDC, añadir `ExistingGitHubOidcProviderArn=arn:aws:iam::<cuenta>:oidc-provider/token.actions.githubusercontent.com`.
-- `--confirm-changeset` muestra el conjunto de cambios antes de aplicarlo: todo debe ser **Add** y ningún recurso debe ser `AWS::Route53::*` ni `AWS::EC2::*`.
+- Con concurrencia reservada no disponible (ver arriba), añadir `ContactReservedConcurrency=0`.
+- `--confirm-changeset` muestra el conjunto de cambios antes de aplicarlo y pide confirmación. En el **primer** despliegue todo debe ser **Add**. En despliegues posteriores es normal ver **Modify** (y algún Add/Remove) sobre recursos de esta pila; nunca debe aparecer nada que no sea de la pila, ningún `AWS::Route53::*` ni `AWS::EC2::*`. Si aparece, responder `n`.
+- Si el **primer** despliegue falla, la pila queda en `ROLLBACK_COMPLETE` y no se puede actualizar: hay que borrarla antes de reintentar (no contiene nada todavía):
+
+  ```bash
+  aws cloudformation delete-stack --stack-name jlc-web-publica --region eu-west-3
+  aws cloudformation wait stack-delete-complete --stack-name jlc-web-publica --region eu-west-3
+  ```
 - `--resolve-s3` crea (una sola vez) la pila `aws-sam-cli-managed-default` con un bucket para el paquete de la Lambda. Es independiente de todo lo demás.
 
 Salidas de la pila (se usan en los pasos siguientes):
@@ -131,7 +165,7 @@ aws ssm put-parameter --region eu-west-3 --overwrite \
   --name /jlc-web-publica/turnstile-secret --type SecureString --value "$TURNSTILE_SECRET"
 ```
 
-Para poder probar el formulario en `<DistributionDomain>` antes del corte, volver a ejecutar el `sam deploy` del paso 6 con `TurnstileHostnames=jlc-ingenieros.com,<DistributionDomain>` (esto además reinicia la Lambda, que así lee el secreto nuevo). Después del corte se puede volver a dejar solo `jlc-ingenieros.com`.
+Para poder probar el formulario en `<DistributionDomain>` antes del corte, volver a ejecutar (desde `main` actualizado) el `sam deploy` del paso 6 con `TurnstileHostnames=jlc-ingenieros.com,<DistributionDomain>` (esto además reinicia la Lambda, que así lee el secreto nuevo). Después del corte se puede volver a dejar solo `jlc-ingenieros.com`.
 
 ### 10. Variables de GitHub
 
@@ -171,8 +205,25 @@ aws cloudformation wait stack-delete-complete --stack-name jlc-web-publica --reg
 aws cloudformation delete-stack --stack-name jlc-web-publica-cert --region us-east-1
 ```
 
-Borrar las pilas **nunca toca Route 53**: los CNAME añadidos en los pasos 5 y 7 se quedan (son inocuos) y, si se quieren quitar, se borran a mano por su nombre exacto. Tampoco se borran los parámetros de SSM (`/jlc-web-publica/*`), la identidad `jlcampos@jlc-ingenieros.com` del paso 8 ni un proveedor OIDC reutilizado; la identidad SES del dominio solo se borra si la creó esta pila.
+Borrar las pilas **nunca toca Route 53**: los CNAME añadidos en los pasos 5 y 7 se quedan (son inocuos) y, si se quieren quitar, se borran a mano por su nombre exacto.
+
+Tampoco se borran (a propósito):
+
+- el proveedor OIDC y la identidad SES `jlc-ingenieros.com` de París, aunque los haya creado la pila (`DeletionPolicy: Retain`): otros repos podrían usar el proveedor y el DKIM publicado apunta a la identidad;
+- los parámetros de SSM (`/jlc-web-publica/*`) y la identidad `jlcampos@jlc-ingenieros.com` del paso 8, que no son de la pila.
+
+Si de verdad se quieren quitar, después de comprobar que nada más los usa (la identidad del dominio en París **solo** si la creó esta pila, es decir, si en el paso 3 dio `NotFoundException`):
+
+```bash
+aws iam delete-open-id-connect-provider \
+  --open-id-connect-provider-arn arn:aws:iam::<cuenta>:oidc-provider/token.actions.githubusercontent.com
+aws sesv2 delete-email-identity --email-identity jlc-ingenieros.com --region eu-west-3
+aws sesv2 delete-email-identity --email-identity jlcampos@jlc-ingenieros.com --region eu-west-3
+aws ssm delete-parameters --region eu-west-3 \
+  --names /jlc-web-publica/turnstile-secret /jlc-web-publica/origin-verify
+```
 
 ## Problemas conocidos
 
-- **`ReservedConcurrentExecutions` … below its minimum value of [10]:** la cuenta tiene la cuota de concurrencia de Lambda por defecto de las cuentas nuevas (10), que no permite reservar nada. Pedir el aumento en **Service Quotas → AWS Lambda → Concurrent executions** (por ejemplo, 100) y repetir el paso 6. No afecta a ningún otro recurso.
+- **Error de `ReservedConcurrentExecutions` (`… decreases account's UnreservedConcurrentExecution below its minimum value …`):** la cuota de concurrencia de la cuenta no deja reservar. Ver la comprobación previa del paso 6: desplegar con `ContactReservedConcurrency=0` o pedir el aumento de la cuota (valor normal: 1000). Si era el primer despliegue, borrar antes la pila en `ROLLBACK_COMPLETE`.
+- **Cambiar el secreto de origen** (`/jlc-web-publica/origin-verify`): cambiar solo el valor en SSM **no basta**. CloudFormation resuelve `{{resolve:ssm:…}}` al desplegar y, si la plantilla y los parámetros no cambian, no actualiza nada. Hace falta un cambio en la plantilla o en la pila que actualice la distribución y la Lambda. Mientras CloudFront propaga el valor nuevo (unos minutos), el formulario puede responder 403 un rato: hacerlo fuera de horas.
