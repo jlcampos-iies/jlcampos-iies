@@ -59,7 +59,8 @@ describe.each(LANGS)('formulario de contacto (%s)', (lang) => {
   it('widget Turnstile dentro del formulario y script solo en esta página', () => {
     const w = form.querySelector('.cf-turnstile')!;
     expect(w.getAttribute('data-sitekey')).toBeTruthy();
-    expect(w.getAttribute('data-language')).toBe(lang);
+    // Cloudflare Turnstile no admite catalán: la página /ca/ usa el castellano.
+    expect(w.getAttribute('data-language')).toBe(lang === 'ca' ? 'es' : lang);
     const scripts = page.querySelectorAll(`script[src="${TURNSTILE}"]`);
     expect(scripts).toHaveLength(1);
   });

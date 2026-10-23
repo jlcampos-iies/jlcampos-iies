@@ -12,6 +12,8 @@ if (!siteKey) {
     'Falta PUBLIC_TURNSTILE_SITE_KEY: defínela al compilar (en CI, la clave de pruebas 1x00000000000000000000AA).',
   );
 }
+// Turnstile no admite catalán (data-language): en /ca/ el widget sale en castellano.
+const turnstileLang = lang === 'ca' ? 'es' : lang;
 const codes = ['validation', 'captcha', 'send', 'network'] as const;
 ---
 <form
@@ -68,7 +70,7 @@ const codes = ['validation', 'captcha', 'send', 'network'] as const;
       </span>
     </label>
   </div>
-  <div class="cf-turnstile" data-sitekey={siteKey} data-language={lang}></div>
+  <div class="cf-turnstile" data-sitekey={siteKey} data-language={turnstileLang}></div>
   <button class="btn" type="submit" data-sending={t(lang, 'form.sending')}>{t(lang, 'form.submit')}</button>
 </form>
 <script>
