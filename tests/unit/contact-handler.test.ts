@@ -1,5 +1,5 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
-import { makeHandler } from '../../lambda/contact/index.mjs';
+import { createAwsDeps, makeHandler } from '../../lambda/contact/index.mjs';
 import { PATHS } from '../../lambda/contact/paths.mjs';
 
 const ENV = {
@@ -87,6 +87,18 @@ describe('acceso', () => {
     expect(r.statusCode).toBe(405);
     expect(r.headers?.allow ?? r.headers?.Allow).toBe('POST');
   });
+  it('ORIGIN_VERIFY sin configurar -> 403 con y sin cabecera (fail-closed)', async () => {
+    const sendEmail = vi.fn(async () => {});
+    const h = makeHandler({
+      sendEmail,
+      getTurnstileSecret: async () => 's',
+      fetchImpl: (async () => ({ json: async () => ({ success: true }) })) as unknown as typeof fetch,
+      env: { ...ENV, ORIGIN_VERIFY: undefined },
+    });
+    expect((await h(ev(valid, { origin: null }))).statusCode).toBe(403);
+    expect((await h(ev(valid, { origin: '' }))).statusCode).toBe(403);
+    expect(sendEmail).not.toHaveBeenCalled();
+  });
   it('403 tiene prioridad sobre 405', async () => {
     const { handler } = setup();
     expect((await handler(ev('', { method: 'GET', origin: null }))).statusCode).toBe(403);
@@ -94,17 +106,24 @@ describe('acceso', () => {
 });
 
 describe('cuerpo', () => {
-  it('> 16 KB -> 400 validation (JSON)', async () => {
+  it('> 16 KB (campos válidos + relleno ignorado) -> 400 validation sin enviar', async () => {
     const { handler, sendEmail } = setup();
-    const r = await handler(ev({ ...valid, message: 'x'.repeat(17 * 1024) }, { accept: JSON_ACCEPT }));
+    const r = await handler(ev({ ...valid, pad: 'x'.repeat(17 * 1024) }, { accept: JSON_ACCEPT }));
     expect(r.statusCode).toBe(400);
     expect(JSON.parse(r.body!)).toEqual({ ok: false, error: 'validation' });
     expect(sendEmail).not.toHaveBeenCalled();
   });
-  it('> 16 KB se mide tras decodificar base64', async () => {
-    const { handler } = setup();
-    const r = await handler(ev({ ...valid, message: 'x'.repeat(17 * 1024) }, { accept: JSON_ACCEPT, base64: true }));
+  it('el límite se mide tras decodificar base64', async () => {
+    const { handler, sendEmail } = setup();
+    const r = await handler(ev({ ...valid, pad: 'x'.repeat(17 * 1024) }, { accept: JSON_ACCEPT, base64: true }));
     expect(r.statusCode).toBe(400);
+    expect(sendEmail).not.toHaveBeenCalled();
+  });
+  it('cuerpo justo por debajo de 16 KB -> éxito', async () => {
+    const { handler, sendEmail } = setup();
+    const r = await handler(ev({ ...valid, pad: 'x'.repeat(15 * 1024) }, { accept: JSON_ACCEPT }));
+    expect(r.statusCode).toBe(200);
+    expect(sendEmail).toHaveBeenCalledTimes(1);
   });
   it('content-type no admitido -> validation', async () => {
     const { handler, sendEmail } = setup();
@@ -192,6 +211,64 @@ describe('flujo', () => {
     const init = (fetchImpl.mock.calls[0] as unknown as [string, RequestInit])[1];
     expect(new URLSearchParams(String(init.body)).get('remoteip')).toBe('2001:db8::1');
   });
+  it('IPv6 con corchetes: se quitan', async () => {
+    const { handler, fetchImpl } = setup();
+    const e = ev(valid, { accept: JSON_ACCEPT });
+    e.headers['cloudfront-viewer-address'] = '[2001:db8::1]:443';
+    await handler(e);
+    const init = (fetchImpl.mock.calls[0] as unknown as [string, RequestInit])[1];
+    expect(new URLSearchParams(String(init.body)).get('remoteip')).toBe('2001:db8::1');
+  });
+  it('Turnstile colgado -> 400 captcha dentro del límite y sin enviar', async () => {
+    const sendEmail = vi.fn(async () => {});
+    const hang = (_u: string, init: RequestInit) =>
+      new Promise((_res, rej) => init.signal!.addEventListener('abort', () => rej(new Error('aborted'))));
+    const h = makeHandler({
+      sendEmail,
+      getTurnstileSecret: async () => 's',
+      fetchImpl: hang as unknown as typeof fetch,
+      turnstileTimeoutMs: 30,
+      env: ENV,
+    });
+    const t0 = Date.now();
+    const r = await h(ev(valid, { accept: JSON_ACCEPT }));
+    expect(Date.now() - t0).toBeLessThan(1000);
+    expect(r.statusCode).toBe(400);
+    expect(JSON.parse(r.body!).error).toBe('captcha');
+    expect(sendEmail).not.toHaveBeenCalled();
+  });
+  it('token de más de 2048 caracteres -> captcha sin llamar a Cloudflare', async () => {
+    const { handler, fetchImpl } = setup();
+    const r = await handler(ev({ ...valid, 'cf-turnstile-response': 't'.repeat(2049) }, { accept: JSON_ACCEPT }));
+    expect(JSON.parse(r.body!).error).toBe('captcha');
+    expect(fetchImpl).not.toHaveBeenCalled();
+  });
+  it('TURNSTILE_HOSTNAMES: hostname fuera de la lista -> captcha; dentro -> ok', async () => {
+    const mk = (hostname: string) =>
+      makeHandler({
+        sendEmail: vi.fn(async () => {}),
+        getTurnstileSecret: async () => 's',
+        fetchImpl: (async () => ({ json: async () => ({ success: true, hostname }) })) as unknown as typeof fetch,
+        env: { ...ENV, TURNSTILE_HOSTNAMES: 'jlc-ingenieros.com, www.jlc-ingenieros.com' },
+      });
+    expect(JSON.parse((await mk('evil.com')(ev(valid, { accept: JSON_ACCEPT }))).body!).error).toBe('captcha');
+    expect((await mk('www.jlc-ingenieros.com')(ev(valid, { accept: JSON_ACCEPT }))).statusCode).toBe(200);
+  });
+  it('fallo al leer el secreto se registra como "secret" y el cliente ve send', async () => {
+    const { handler, getTurnstileSecret } = setup();
+    getTurnstileSecret.mockRejectedValueOnce(new Error('ssm-detail'));
+    const r = await handler(ev(valid, { accept: JSON_ACCEPT }));
+    expect(JSON.parse(r.body!).error).toBe('send');
+    const dump = JSON.stringify(logSpies.flatMap((s) => s.mock.calls));
+    expect(dump).toContain('result\\":\\"secret');
+    expect(dump).not.toContain('ssm-detail');
+  });
+  it('email con parte local no ASCII -> 400 validation (no 502)', async () => {
+    const { handler, sendEmail } = setup();
+    const r = await handler(ev({ ...valid, email: 'josé@example.com' }, { accept: JSON_ACCEPT }));
+    expect(JSON.parse(r.body!).error).toBe('validation');
+    expect(sendEmail).not.toHaveBeenCalled();
+  });
   it('fallo al leer el secreto de Turnstile -> 502 send', async () => {
     const { handler, getTurnstileSecret, sendEmail } = setup();
     getTurnstileSecret.mockRejectedValueOnce(new Error('ssm'));
@@ -256,5 +333,89 @@ describe('logs sin datos personales', () => {
     expect(results).toEqual(
       expect.arrayContaining(['ok', 'captcha', 'send', 'validation', 'honeypot', 'forbidden', 'method']),
     );
+  });
+});
+
+describe('createAwsDeps', () => {
+  class FakeCmd {
+    constructor(public input: unknown) {}
+  }
+  class SendEmailCommand extends FakeCmd {}
+  class GetParameterCommand extends FakeCmd {}
+  function build(env: Record<string, string | undefined> = { TO: ENV.TO, FROM: ENV.FROM }, ssmResult: unknown = { Parameter: { Value: 'sec' } }) {
+    const sesSent: FakeCmd[] = [];
+    const ssmSent: FakeCmd[] = [];
+    const configs: Record<string, unknown>[] = [];
+    const ssmBehaviour = { fail: false };
+    class SESv2Client {
+      constructor(c: Record<string, unknown>) { configs.push(c); }
+      async send(cmd: FakeCmd) { sesSent.push(cmd); }
+    }
+    class SSMClient {
+      constructor(c: Record<string, unknown>) { configs.push(c); }
+      async send(cmd: FakeCmd) {
+        ssmSent.push(cmd);
+        if (ssmBehaviour.fail) throw new Error('x');
+        return ssmResult;
+      }
+    }
+    const deps = createAwsDeps({ SESv2Client, SendEmailCommand, SSMClient, GetParameterCommand, env });
+    return { deps, sesSent, ssmSent, configs, ssmBehaviour };
+  }
+  const msg = { to: ENV.TO, from: ENV.FROM, replyTo: 'v@example.com', subject: 'S', text: 'T' };
+
+  it('SES: entrada completa con UTF-8', async () => {
+    const { deps, sesSent } = build();
+    await deps.sendEmail(msg);
+    expect(sesSent).toHaveLength(1);
+    expect(sesSent[0].input).toEqual({
+      FromEmailAddress: ENV.FROM,
+      Destination: { ToAddresses: [ENV.TO] },
+      ReplyToAddresses: ['v@example.com'],
+      Content: {
+        Simple: {
+          Subject: { Data: 'S', Charset: 'UTF-8' },
+          Body: { Text: { Data: 'T', Charset: 'UTF-8' } },
+        },
+      },
+    });
+  });
+  it('clientes con timeouts y maxAttempts', () => {
+    const { configs } = build();
+    expect(configs).toHaveLength(2);
+    for (const c of configs) {
+      expect(c).toMatchObject({ requestHandler: { requestTimeout: 3000, connectionTimeout: 1000 }, maxAttempts: 2 });
+    }
+  });
+  it('SSM: nombre por defecto, WithDecryption y caché', async () => {
+    const { deps, ssmSent } = build();
+    expect(await deps.getTurnstileSecret()).toBe('sec');
+    expect(await deps.getTurnstileSecret()).toBe('sec');
+    expect(ssmSent).toHaveLength(1);
+    expect(ssmSent[0].input).toEqual({ Name: '/jlc-web-publica/turnstile-secret', WithDecryption: true });
+  });
+  it('SSM: nombre desde TURNSTILE_SECRET_PARAM', async () => {
+    const { deps, ssmSent } = build({ TO: ENV.TO, FROM: ENV.FROM, TURNSTILE_SECRET_PARAM: '/x/y' });
+    await deps.getTurnstileSecret();
+    expect(ssmSent[0].input).toMatchObject({ Name: '/x/y' });
+  });
+  it('SSM: un rechazo no se cachea', async () => {
+    const { deps, ssmSent, ssmBehaviour } = build();
+    ssmBehaviour.fail = true;
+    await expect(deps.getTurnstileSecret()).rejects.toThrow();
+    ssmBehaviour.fail = false;
+    expect(await deps.getTurnstileSecret()).toBe('sec');
+    expect(ssmSent).toHaveLength(2);
+  });
+  it('SSM: sin Parameter.Value -> lanza', async () => {
+    const { deps } = build(undefined, { Parameter: {} });
+    await expect(deps.getTurnstileSecret()).rejects.toThrow();
+  });
+  it('sin TO o FROM -> lanza y no envía', async () => {
+    const a = build({ FROM: ENV.FROM });
+    await expect(a.deps.sendEmail({ ...msg, to: undefined as unknown as string })).rejects.toThrow();
+    const b = build({ TO: ENV.TO });
+    await expect(b.deps.sendEmail({ ...msg, from: undefined as unknown as string })).rejects.toThrow();
+    expect(a.sesSent.length + b.sesSent.length).toBe(0);
   });
 });

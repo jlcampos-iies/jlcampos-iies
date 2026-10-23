@@ -40,7 +40,8 @@ const viewerIp = (headers) => {
   const v = headers?.['cloudfront-viewer-address'];
   if (!v) return undefined;
   const i = v.lastIndexOf(':');
-  return i > 0 ? v.slice(0, i) : v;
+  const ip = i > 0 ? v.slice(0, i) : v;
+  return ip.replace(/^\[(.*)\]$/, '$1');
 };
 
 /**
@@ -49,11 +50,12 @@ const viewerIp = (headers) => {
  *   sendEmail: (msg: any) => Promise<void>,
  *   getTurnstileSecret: () => Promise<string>,
  *   fetchImpl?: typeof fetch,
- *   env: { ORIGIN_VERIFY?: string, TO?: string, FROM?: string },
+ *   turnstileTimeoutMs?: number,
+ *   env: { ORIGIN_VERIFY?: string, TO?: string, FROM?: string, TURNSTILE_HOSTNAMES?: string },
  * }} deps
  * @returns {(event: any) => Promise<LambdaResponse>}
  */
-export function makeHandler({ sendEmail, getTurnstileSecret, fetchImpl = fetch, env }) {
+export function makeHandler({ sendEmail, getTurnstileSecret, fetchImpl = fetch, turnstileTimeoutMs, env }) {
   return async function handler(event) {
     const headers = event.headers ?? {};
     const json = String(headers.accept ?? '').toLowerCase().includes('application/json');
@@ -61,16 +63,18 @@ export function makeHandler({ sendEmail, getTurnstileSecret, fetchImpl = fetch, 
     const respond = (result, lang) => {
       log(result);
       const ok = result === 'ok' || result === 'honeypot';
+      // 'secret' solo se distingue en los logs; el visitante ve 'send'.
+      const code = result === 'secret' ? 'send' : result;
       if (json) {
-        const status = ok ? 200 : result === 'send' ? 502 : 400;
+        const status = ok ? 200 : code === 'send' ? 502 : 400;
         return {
           statusCode: status,
           headers: { 'content-type': 'application/json; charset=utf-8', 'cache-control': 'no-store' },
-          body: JSON.stringify(ok ? { ok: true } : { ok: false, error: result }),
+          body: JSON.stringify(ok ? { ok: true } : { ok: false, error: code }),
         };
       }
       const p = PATHS[lang] ?? PATHS.es;
-      const location = ok ? p.thanks : `${p.contact}?error=${result}#form-error-${result}`;
+      const location = ok ? p.thanks : `${p.contact}?error=${code}#form-error-${code}`;
       return { statusCode: 303, headers: { location, 'cache-control': 'no-store' }, body: '' };
     };
 
@@ -96,14 +100,24 @@ export function makeHandler({ sendEmail, getTurnstileSecret, fetchImpl = fetch, 
     const v = validateForm(input);
     if (!v.ok) return respond('validation', lang);
 
+    let secret;
     try {
-      const secret = await getTurnstileSecret();
-      const token = input['cf-turnstile-response'];
-      const human = await verifyTurnstile(token, secret, viewerIp(headers), fetchImpl);
-      if (!human) return respond('captcha', lang);
+      secret = await getTurnstileSecret();
+    } catch {
+      return respond('secret', lang);
+    }
+    const hostnames = (env.TURNSTILE_HOSTNAMES ?? '')
+      .split(',')
+      .map((h) => h.trim())
+      .filter(Boolean);
+    const human = await verifyTurnstile(input['cf-turnstile-response'], secret, viewerIp(headers), fetchImpl, {
+      hostnames,
+      timeoutMs: turnstileTimeoutMs,
+    });
+    if (!human) return respond('captcha', lang);
 
-      const mail = buildEmail(v.data, new Date());
-      await sendEmail({ to: env.TO, from: env.FROM, ...mail });
+    try {
+      await sendEmail({ to: env.TO, from: env.FROM, ...buildEmail(v.data, new Date()) });
     } catch {
       return respond('send', lang);
     }
@@ -111,16 +125,18 @@ export function makeHandler({ sendEmail, getTurnstileSecret, fetchImpl = fetch, 
   };
 }
 
-let cachedSecret;
+const CLIENT_CONFIG = {
+  requestHandler: { requestTimeout: 3000, connectionTimeout: 1000 },
+  maxAttempts: 2,
+};
 
-async function defaultDeps() {
-  // El SDK v3 viene en el runtime de Node 22; import dinámico para que los tests no lo carguen.
-  const { SESv2Client, SendEmailCommand } = await import('@aws-sdk/client-sesv2');
-  const { SSMClient, GetParameterCommand } = await import('@aws-sdk/client-ssm');
-  const ses = new SESv2Client({});
-  const ssm = new SSMClient({});
+export function createAwsDeps({ SESv2Client, SendEmailCommand, SSMClient, GetParameterCommand, env }) {
+  const ses = new SESv2Client({ ...CLIENT_CONFIG });
+  const ssm = new SSMClient({ ...CLIENT_CONFIG });
+  let cachedSecret;
   return {
     sendEmail: async ({ to, from, replyTo, subject, text }) => {
+      if (!to || !from) throw new Error('mail env missing');
       await ses.send(
         new SendEmailCommand({
           FromEmailAddress: from,
@@ -139,14 +155,23 @@ async function defaultDeps() {
       if (cachedSecret) return cachedSecret;
       const out = await ssm.send(
         new GetParameterCommand({
-          Name: process.env.TURNSTILE_SECRET_PARAM || DEFAULT_SECRET_PARAM,
+          Name: env.TURNSTILE_SECRET_PARAM || DEFAULT_SECRET_PARAM,
           WithDecryption: true,
         }),
       );
-      cachedSecret = out.Parameter.Value;
+      const value = out?.Parameter?.Value;
+      if (!value) throw new Error('secret missing');
+      cachedSecret = value;
       return cachedSecret;
     },
   };
+}
+
+async function defaultDeps() {
+  // El SDK v3 viene en el runtime de Node 22; import dinámico para que los tests no lo carguen.
+  const { SESv2Client, SendEmailCommand } = await import('@aws-sdk/client-sesv2');
+  const { SSMClient, GetParameterCommand } = await import('@aws-sdk/client-ssm');
+  return createAwsDeps({ SESv2Client, SendEmailCommand, SSMClient, GetParameterCommand, env: process.env });
 }
 
 let real;
@@ -154,7 +179,7 @@ export const handler = async (event) => {
   real ??= makeHandler({
     ...(await defaultDeps()),
     fetchImpl: fetch,
-    env: { ORIGIN_VERIFY: process.env.ORIGIN_VERIFY, TO: process.env.TO, FROM: process.env.FROM },
+    env: process.env,
   });
   return real(event);
 };

@@ -1,4 +1,4 @@
-const oneLine = (s) => s.replace(/[\r\n]+/g, ' ').trim();
+const oneLine = (s) => s.replace(/[\p{Cc}\u2028\u2029]+/gu, ' ').trim();
 
 export function buildEmail(data, now) {
   const subject = `[Web] Contacto de ${oneLine(data.name).slice(0, 100)}`;

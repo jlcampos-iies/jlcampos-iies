@@ -1,6 +1,6 @@
 import { LANGS } from './paths.mjs';
 
-const EMAIL_RE = /^[^\s@<>()[\]\\,;:"]+@[A-Za-z0-9](?:[A-Za-z0-9-]*[A-Za-z0-9])?(?:\.[A-Za-z0-9](?:[A-Za-z0-9-]*[A-Za-z0-9])?)+$/;
+const EMAIL_RE = /^(?=[\x21-\x7E]+@)[^\s@<>()[\]\\,;:"]+@[A-Za-z0-9](?:[A-Za-z0-9-]*[A-Za-z0-9])?(?:\.[A-Za-z0-9](?:[A-Za-z0-9-]*[A-Za-z0-9])?)+$/;
 const PHONE_RE = /^[0-9 +()-]*$/;
 
 const str = (v) => (typeof v === 'string' ? v.trim() : v === undefined || v === null ? '' : null);

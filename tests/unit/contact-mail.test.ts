@@ -35,6 +35,13 @@ describe('buildEmail', () => {
   });
 });
 
+describe('buildEmail controles', () => {
+  it('sustituye cualquier carácter de control o separador de línea en el asunto', () => {
+    const { subject } = buildEmail({ ...data, name: 'A\u0000B\tC\u2028D\u0085E' }, now);
+    expect(subject).toBe('[Web] Contacto de A B C D E');
+  });
+});
+
 describe('verifyTurnstile', () => {
   const ok = (body: unknown) => vi.fn(async () => ({ json: async () => body }) as Response);
   it('POST urlencoded a siteverify con secret, response y remoteip', async () => {
@@ -63,6 +70,28 @@ describe('verifyTurnstile', () => {
     const f = ok({ success: true });
     expect(await verifyTurnstile('', 's', undefined, f as unknown as typeof fetch)).toBe(false);
     expect(f).not.toHaveBeenCalled();
+  });
+  it('token > 2048 -> false sin red', async () => {
+    const f = ok({ success: true });
+    expect(await verifyTurnstile('t'.repeat(2049), 's', undefined, f as unknown as typeof fetch)).toBe(false);
+    expect(f).not.toHaveBeenCalled();
+    expect(await verifyTurnstile('t'.repeat(2048), 's', undefined, f as unknown as typeof fetch)).toBe(true);
+  });
+  it('hostnames: exige coincidencia si se configuran, ignora si no', async () => {
+    const f = ok({ success: true, hostname: 'a.com' });
+    expect(await verifyTurnstile('t', 's', undefined, f as unknown as typeof fetch, { hostnames: ['b.com'] })).toBe(false);
+    expect(await verifyTurnstile('t', 's', undefined, f as unknown as typeof fetch, { hostnames: ['a.com'] })).toBe(true);
+    expect(await verifyTurnstile('t', 's', undefined, f as unknown as typeof fetch, { hostnames: [] })).toBe(true);
+  });
+  it('pasa una señal de timeout y resuelve false si fetch no responde', async () => {
+    const hang = vi.fn(
+      (_u: string, init: RequestInit) =>
+        new Promise((_r, rej) => init.signal!.addEventListener('abort', () => rej(new Error('abort')))),
+    );
+    const t0 = Date.now();
+    expect(await verifyTurnstile('t', 's', undefined, hang as unknown as typeof fetch, { timeoutMs: 30 })).toBe(false);
+    expect(Date.now() - t0).toBeLessThan(1000);
+    expect((hang.mock.calls[0][1] as RequestInit).signal).toBeInstanceOf(AbortSignal);
   });
   it('false ante error de red o JSON inválido', async () => {
     const boom = vi.fn(async () => {
