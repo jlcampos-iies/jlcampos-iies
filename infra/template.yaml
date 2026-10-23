@@ -1,0 +1,475 @@
+# Pila jlc-web-publica (eu-west-3): web estática de jlc-ingenieros.com en S3 + CloudFront
+# y formulario de contacto en Lambda + SES.
+#
+# REQUISITO Nº 1: esta pila NO crea, modifica, importa ni referencia ningún recurso del área
+# privada (EC2 3.12.236.157, VPC, security groups, IAM ajeno, identidad SES existente) ni
+# ningún registro o zona de Route 53. Todos los recursos son nuevos y propios de la pila.
+#
+# No se despliega tal cual: `node infra/render.mjs` genera infra/build/template.yaml con el
+# código de la CloudFront Function (edge/dist/viewer-request.js) insertado. Ver infra/README.md.
+AWSTemplateFormatVersion: '2010-09-09'
+Transform: AWS::Serverless-2016-10-31
+Description: jlc-web-publica - web estatica (S3 + CloudFront) y formulario de contacto (Lambda + SES)
+
+Parameters:
+  CertificateArn:
+    Type: String
+    AllowedPattern: '^arn:aws:acm:us-east-1:\d{12}:certificate/.+$'
+    ConstraintDescription: debe ser el ARN de un certificado ACM de us-east-1.
+    Description: ARN del certificado ACM de us-east-1 (salida CertificateArn de la pila jlc-web-publica-cert). Solo se usa con EnableAliases=true.
+  EnableAliases:
+    Type: String
+    Default: 'false'
+    AllowedValues: ['true', 'false']
+    Description: Asigna los alias jlc-ingenieros.com y www.jlc-ingenieros.com a la distribucion (se activa en el corte). No toca el DNS.
+  CreateSesIdentity:
+    Type: String
+    AllowedValues: ['true', 'false']
+    Description: "'true' si aws sesv2 get-email-identity --email-identity jlc-ingenieros.com --region eu-west-3 da NotFoundException; 'false' si ya existe (se reutiliza sin modificarla)."
+  ExistingGitHubOidcProviderArn:
+    Type: String
+    Default: ''
+    Description: ARN del proveedor OIDC token.actions.githubusercontent.com si ya existe en la cuenta (se reutiliza). Vacio = se crea.
+  TurnstileHostnames:
+    Type: String
+    Default: jlc-ingenieros.com
+    Description: Hostnames aceptados en la respuesta de Turnstile, separados por comas (durante las pruebas, anadir el dominio cloudfront.net).
+
+Conditions:
+  UseAliases: !Equals [!Ref EnableAliases, 'true']
+  CreateSesIdentity: !Equals [!Ref CreateSesIdentity, 'true']
+  CreateOidcProvider: !Equals [!Ref ExistingGitHubOidcProviderArn, '']
+
+Resources:
+  # ---------------------------------------------------------------- S3 (origen privado)
+  SiteBucket:
+    Type: AWS::S3::Bucket
+    DeletionPolicy: Delete
+    UpdateReplacePolicy: Delete
+    Properties:
+      BucketName: !Sub 'jlc-web-publica-site-${AWS::AccountId}'
+      BucketEncryption:
+        ServerSideEncryptionConfiguration:
+          - ServerSideEncryptionByDefault:
+              SSEAlgorithm: AES256
+      VersioningConfiguration:
+        Status: Enabled
+      LifecycleConfiguration:
+        Rules:
+          - Id: borrar-versiones-antiguas
+            Status: Enabled
+            NoncurrentVersionExpiration:
+              NoncurrentDays: 30
+            AbortIncompleteMultipartUpload:
+              DaysAfterInitiation: 7
+      PublicAccessBlockConfiguration:
+        BlockPublicAcls: true
+        BlockPublicPolicy: true
+        IgnorePublicAcls: true
+        RestrictPublicBuckets: true
+      OwnershipControls:
+        Rules:
+          - ObjectOwnership: BucketOwnerEnforced
+      Tags:
+        - Key: project
+          Value: jlc-web-publica
+
+  SiteBucketPolicy:
+    Type: AWS::S3::BucketPolicy
+    Properties:
+      Bucket: !Ref SiteBucket
+      PolicyDocument:
+        Version: '2012-10-17'
+        Statement:
+          - Sid: SoloEstaDistribucionPorOAC
+            Effect: Allow
+            Principal:
+              Service: cloudfront.amazonaws.com
+            Action: s3:GetObject
+            Resource: !Sub '${SiteBucket.Arn}/*'
+            Condition:
+              StringEquals:
+                AWS:SourceArn: !Sub 'arn:aws:cloudfront::${AWS::AccountId}:distribution/${Distribution}'
+
+  SiteOriginAccessControl:
+    Type: AWS::CloudFront::OriginAccessControl
+    Properties:
+      OriginAccessControlConfig:
+        Name: jlc-web-publica-s3
+        Description: Acceso de CloudFront al bucket de la web
+        OriginAccessControlOriginType: s3
+        SigningBehavior: always
+        SigningProtocol: sigv4
+
+  # ---------------------------------------------------------------- CloudFront
+  EdgeFunction:
+    Type: AWS::CloudFront::Function
+    Properties:
+      Name: jlc-web-viewer-request
+      AutoPublish: true
+      FunctionConfig:
+        Comment: 301 de map.json, bloqueo de rutas de WordPress y reescritura a index.html
+        Runtime: cloudfront-js-2.0
+      # render.mjs sustituye esta línea por el contenido de edge/dist/viewer-request.js.
+      FunctionCode: '__VIEWER_REQUEST_JS__'
+      Tags:
+        - Key: project
+          Value: jlc-web-publica
+
+  SecurityHeadersPolicy:
+    Type: AWS::CloudFront::ResponseHeadersPolicy
+    Properties:
+      ResponseHeadersPolicyConfig:
+        Name: jlc-web-publica-security
+        Comment: Cabeceras de seguridad de jlc-ingenieros.com (spec 7)
+        SecurityHeadersConfig:
+          # Sin includeSubDomains ni preload: no se impone HTTPS a areaprivada, demo, met
+          # ni a ningún otro subdominio (requisito nº 1).
+          StrictTransportSecurity:
+            AccessControlMaxAgeSec: 63072000
+            Override: true
+          ContentSecurityPolicy:
+            ContentSecurityPolicy: "default-src 'self'; script-src 'self' https://challenges.cloudflare.com; frame-src https://challenges.cloudflare.com; connect-src 'self'; img-src 'self' data:; style-src 'self'; object-src 'none'; base-uri 'self'; form-action 'self'; frame-ancestors 'none'"
+            Override: true
+          ContentTypeOptions:
+            Override: true
+          ReferrerPolicy:
+            ReferrerPolicy: strict-origin-when-cross-origin
+            Override: true
+          FrameOptions:
+            FrameOption: DENY
+            Override: true
+        CustomHeadersConfig:
+          Items:
+            - Header: Permissions-Policy
+              Value: accelerometer=(), autoplay=(), camera=(), display-capture=(), geolocation=(), gyroscope=(), magnetometer=(), microphone=(), midi=(), payment=(), usb=()
+              Override: true
+
+  Distribution:
+    Type: AWS::CloudFront::Distribution
+    Properties:
+      DistributionConfig:
+        Comment: jlc-web-publica
+        Enabled: true
+        # Los alias se activan en el corte (EnableAliases=true). Asignarlos no cambia el DNS.
+        Aliases: !If [UseAliases, [jlc-ingenieros.com, www.jlc-ingenieros.com], !Ref AWS::NoValue]
+        # Un certificado ACM sin alias no está permitido: sin alias se usa el de *.cloudfront.net.
+        ViewerCertificate: !If
+          - UseAliases
+          - AcmCertificateArn: !Ref CertificateArn
+            MinimumProtocolVersion: TLSv1.2_2021
+            SslSupportMethod: sni-only
+          - CloudFrontDefaultCertificate: true
+        HttpVersion: http2and3
+        IPV6Enabled: true
+        PriceClass: PriceClass_100
+        DefaultRootObject: index.html
+        Origins:
+          - Id: s3-site
+            DomainName: !GetAtt SiteBucket.RegionalDomainName
+            OriginAccessControlId: !GetAtt SiteOriginAccessControl.Id
+            S3OriginConfig:
+              OriginAccessIdentity: ''
+          - Id: lambda-contact
+            # https://<id>.lambda-url.eu-west-3.on.aws/ -> <id>.lambda-url.eu-west-3.on.aws
+            DomainName: !Select [2, !Split ['/', !GetAtt ContactFunctionUrl.FunctionUrl]]
+            CustomOriginConfig:
+              OriginProtocolPolicy: https-only
+              HTTPSPort: 443
+              OriginSSLProtocols: [TLSv1.2]
+            # La Lambda rechaza con 403 toda petición sin este secreto (llamadas directas a la URL).
+            OriginCustomHeaders:
+              - HeaderName: X-Origin-Verify
+                HeaderValue: '{{resolve:ssm:/jlc-web-publica/origin-verify}}'
+        DefaultCacheBehavior:
+          TargetOriginId: s3-site
+          ViewerProtocolPolicy: redirect-to-https
+          AllowedMethods: [GET, HEAD]
+          CachedMethods: [GET, HEAD]
+          Compress: true
+          CachePolicyId: 658327ea-f89d-4fab-a63d-7e88639e58f6 # Managed-CachingOptimized
+          ResponseHeadersPolicyId: !Ref SecurityHeadersPolicy
+          FunctionAssociations:
+            - EventType: viewer-request
+              FunctionARN: !GetAtt EdgeFunction.FunctionMetadata.FunctionARN
+        CacheBehaviors:
+          - PathPattern: /api/*
+            TargetOriginId: lambda-contact
+            ViewerProtocolPolicy: redirect-to-https
+            AllowedMethods: [GET, HEAD, OPTIONS, PUT, POST, PATCH, DELETE]
+            CachedMethods: [GET, HEAD]
+            Compress: false
+            CachePolicyId: 4135ea2d-6df8-44a3-9df3-4b5a84be39ad # Managed-CachingDisabled
+            OriginRequestPolicyId: b689b0a8-53d0-40ab-baf2-68738e2966ac # Managed-AllViewerExceptHostHeader
+            ResponseHeadersPolicyId: !Ref SecurityHeadersPolicy
+        # Solo 403 (objeto inexistente en S3 con OAC) y 404. La Lambda nunca devuelve 403/404
+        # por errores de usuario, porque CloudFront los convertiría en la página 404.
+        CustomErrorResponses:
+          - ErrorCode: 403
+            ResponseCode: 404
+            ResponsePagePath: /404.html
+            ErrorCachingMinTTL: 60
+          - ErrorCode: 404
+            ResponseCode: 404
+            ResponsePagePath: /404.html
+            ErrorCachingMinTTL: 60
+      Tags:
+        - Key: project
+          Value: jlc-web-publica
+
+  # ---------------------------------------------------------------- Lambda del formulario
+  ContactLogGroup:
+    Type: AWS::Logs::LogGroup
+    DeletionPolicy: Delete
+    UpdateReplacePolicy: Delete
+    Properties:
+      LogGroupName: /aws/lambda/jlc-web-contact
+      RetentionInDays: 30
+      Tags:
+        - Key: project
+          Value: jlc-web-publica
+
+  ContactRole:
+    Type: AWS::IAM::Role
+    Properties:
+      Description: Rol de ejecucion de jlc-web-contact
+      AssumeRolePolicyDocument:
+        Version: '2012-10-17'
+        Statement:
+          - Effect: Allow
+            Principal:
+              Service: lambda.amazonaws.com
+            Action: sts:AssumeRole
+      # No hace falta kms:Decrypt para el SecureString: la clave gestionada alias/aws/ssm
+      # ya concede el descifrado vía SSM a los principales de la cuenta en su política de clave.
+      Policies:
+        - PolicyName: jlc-web-contact
+          PolicyDocument:
+            Version: '2012-10-17'
+            Statement:
+              - Sid: Logs
+                Effect: Allow
+                Action: [logs:CreateLogStream, logs:PutLogEvents]
+                Resource: !GetAtt ContactLogGroup.Arn
+              - Sid: EnviarCorreo
+                Effect: Allow
+                Action: ses:SendEmail
+                # Identidad del dominio (remitente) y del destinatario (sandbox de SES).
+                Resource:
+                  - !Sub 'arn:aws:ses:${AWS::Region}:${AWS::AccountId}:identity/jlc-ingenieros.com'
+                  - !Sub 'arn:aws:ses:${AWS::Region}:${AWS::AccountId}:identity/jlcampos@jlc-ingenieros.com'
+              - Sid: LeerParametros
+                Effect: Allow
+                Action: ssm:GetParameter
+                Resource: !Sub 'arn:aws:ssm:${AWS::Region}:${AWS::AccountId}:parameter/jlc-web-publica/*'
+      Tags:
+        - Key: project
+          Value: jlc-web-publica
+
+  ContactFunction:
+    Type: AWS::Serverless::Function
+    Properties:
+      FunctionName: jlc-web-contact
+      Description: Formulario de contacto de jlc-ingenieros.com (Turnstile + SES)
+      CodeUri: ../lambda/contact
+      Handler: index.handler
+      Runtime: nodejs22.x
+      Architectures: [arm64]
+      MemorySize: 128
+      Timeout: 10
+      ReservedConcurrentExecutions: 2
+      Role: !GetAtt ContactRole.Arn
+      LoggingConfig:
+        LogGroup: !Ref ContactLogGroup
+      FunctionUrlConfig:
+        # AuthType NONE: OAC con POST exigiría x-amz-content-sha256 al navegador (spec §6).
+        # La protección es la cabecera X-Origin-Verify que añade CloudFront.
+        AuthType: NONE
+      Environment:
+        Variables:
+          ORIGIN_VERIFY: '{{resolve:ssm:/jlc-web-publica/origin-verify}}'
+          TO: jlcampos@jlc-ingenieros.com
+          FROM: JLC Ingenieros web <web@jlc-ingenieros.com>
+          TURNSTILE_SECRET_PARAM: /jlc-web-publica/turnstile-secret
+          TURNSTILE_HOSTNAMES: !Ref TurnstileHostnames
+      Tags:
+        project: jlc-web-publica
+
+  # Desde el cambio de AWS de 2025, una Function URL pública nueva necesita DOS permisos
+  # basados en recurso: lambda:InvokeFunctionUrl (FunctionUrlAuthType NONE) y
+  # lambda:InvokeFunction. Este último se limita a invocaciones a través de la Function URL
+  # (InvokedViaFunctionUrl), así que no abre la API Invoke. Las versiones recientes de SAM
+  # generan unos equivalentes; declararlos aquí no depende de la versión del transform y un
+  # permiso repetido (con otro Sid) es inocuo.
+  ContactFunctionUrlPermission:
+    Type: AWS::Lambda::Permission
+    Properties:
+      FunctionName: !Ref ContactFunction
+      Action: lambda:InvokeFunctionUrl
+      Principal: '*'
+      FunctionUrlAuthType: NONE
+
+  ContactFunctionInvokeViaUrlPermission:
+    Type: AWS::Lambda::Permission
+    Properties:
+      FunctionName: !Ref ContactFunction
+      Action: lambda:InvokeFunction
+      Principal: '*'
+      InvokedViaFunctionUrl: true
+
+  # ---------------------------------------------------------------- SES (eu-west-3)
+  # Solo si no existe ya una identidad del dominio en París. Easy DKIM: genera 3 CNAME nuevos
+  # (salidas DkimRecord*), que el titular publica con el botón de la consola. La plantilla no
+  # crea registros DNS. MAIL FROM por defecto (amazonses.com): el SPF no cambia.
+  SesDomainIdentity:
+    Type: AWS::SES::EmailIdentity
+    Condition: CreateSesIdentity
+    Properties:
+      EmailIdentity: jlc-ingenieros.com
+      DkimSigningAttributes:
+        NextSigningKeyLength: RSA_2048_BIT
+      DkimAttributes:
+        SigningEnabled: true
+      Tags:
+        - Key: project
+          Value: jlc-web-publica
+
+  # ---------------------------------------------------------------- Despliegue desde GitHub
+  GitHubOidcProvider:
+    Type: AWS::IAM::OIDCProvider
+    Condition: CreateOidcProvider
+    Properties:
+      Url: https://token.actions.githubusercontent.com
+      ClientIdList: [sts.amazonaws.com]
+      Tags:
+        - Key: project
+          Value: jlc-web-publica
+
+  DeployRole:
+    Type: AWS::IAM::Role
+    Properties:
+      Description: GitHub Actions (jlcampos-iies/jlcampos-iies, main) - publica la web de jlc-ingenieros.com
+      AssumeRolePolicyDocument:
+        Version: '2012-10-17'
+        Statement:
+          - Effect: Allow
+            Principal:
+              Federated: !If [CreateOidcProvider, !Ref GitHubOidcProvider, !Ref ExistingGitHubOidcProviderArn]
+            Action: sts:AssumeRoleWithWebIdentity
+            Condition:
+              StringEquals:
+                token.actions.githubusercontent.com:aud: sts.amazonaws.com
+                token.actions.githubusercontent.com:sub: repo:jlcampos-iies/jlcampos-iies:ref:refs/heads/main
+      Policies:
+        - PolicyName: jlc-web-publica-deploy
+          PolicyDocument:
+            Version: '2012-10-17'
+            Statement:
+              - Sid: ListarBucket
+                Effect: Allow
+                Action: s3:ListBucket
+                Resource: !GetAtt SiteBucket.Arn
+              - Sid: SincronizarObjetos
+                Effect: Allow
+                Action: [s3:PutObject, s3:DeleteObject]
+                Resource: !Sub '${SiteBucket.Arn}/*'
+              - Sid: Invalidar
+                Effect: Allow
+                Action: cloudfront:CreateInvalidation
+                Resource: !Sub 'arn:aws:cloudfront::${AWS::AccountId}:distribution/${Distribution}'
+              - Sid: PublicarFunction
+                Effect: Allow
+                Action: [cloudfront:DescribeFunction, cloudfront:UpdateFunction, cloudfront:PublishFunction]
+                Resource: !GetAtt EdgeFunction.FunctionARN
+              - Sid: ActualizarLambda
+                Effect: Allow
+                Action: [lambda:UpdateFunctionCode, lambda:GetFunction]
+                Resource: !GetAtt ContactFunction.Arn
+      Tags:
+        - Key: project
+          Value: jlc-web-publica
+
+  # ---------------------------------------------------------------- Presupuesto
+  # Filtrado por la etiqueta project=jlc-web-publica, para que los costes del área privada
+  # no disparen los avisos. Requiere activar la etiqueta de asignación de costes "project"
+  # en Billing (ver infra/README.md).
+  Budget:
+    Type: AWS::Budgets::Budget
+    Properties:
+      Budget:
+        BudgetName: jlc-web-publica-mensual
+        BudgetType: COST
+        TimeUnit: MONTHLY
+        BudgetLimit:
+          Amount: 5
+          Unit: USD
+        CostFilters:
+          TagKeyValue:
+            - user:project$jlc-web-publica
+      NotificationsWithSubscribers:
+        - Notification:
+            NotificationType: ACTUAL
+            ComparisonOperator: GREATER_THAN
+            Threshold: 80
+            ThresholdType: PERCENTAGE
+          Subscribers:
+            - SubscriptionType: EMAIL
+              Address: jlcampos@jlc-ingenieros.com
+        - Notification:
+            NotificationType: ACTUAL
+            ComparisonOperator: GREATER_THAN
+            Threshold: 100
+            ThresholdType: PERCENTAGE
+          Subscribers:
+            - SubscriptionType: EMAIL
+              Address: jlcampos@jlc-ingenieros.com
+      ResourceTags:
+        - Key: project
+          Value: jlc-web-publica
+
+Outputs:
+  BucketName:
+    Description: Bucket de la web (variable S3_BUCKET de GitHub)
+    Value: !Ref SiteBucket
+  DistributionId:
+    Description: Id de la distribucion (variable CF_DISTRIBUTION_ID de GitHub)
+    Value: !Ref Distribution
+  DistributionDomain:
+    Description: Dominio cloudfront.net de la distribucion (pruebas antes del corte y widget de Turnstile)
+    Value: !GetAtt Distribution.DomainName
+  DeployRoleArn:
+    Description: Rol de GitHub Actions (variable AWS_ROLE_ARN de GitHub)
+    Value: !GetAtt DeployRole.Arn
+  ContactFunctionName:
+    Description: Lambda del formulario (variable CONTACT_FUNCTION_NAME de GitHub)
+    Value: !Ref ContactFunction
+  EdgeFunctionName:
+    Description: CloudFront Function (variable CF_FUNCTION_NAME de GitHub)
+    Value: !Select [1, !Split ['/', !GetAtt EdgeFunction.FunctionARN]]
+  ContactFunctionUrl:
+    Description: Function URL de la Lambda (sin X-Origin-Verify responde 403)
+    Value: !GetAtt ContactFunctionUrl.FunctionUrl
+  DkimRecord1Name:
+    Condition: CreateSesIdentity
+    Description: CNAME DKIM 1 (nombre) de la identidad SES nueva
+    Value: !GetAtt SesDomainIdentity.DkimDNSTokenName1
+  DkimRecord1Value:
+    Condition: CreateSesIdentity
+    Description: CNAME DKIM 1 (valor)
+    Value: !GetAtt SesDomainIdentity.DkimDNSTokenValue1
+  DkimRecord2Name:
+    Condition: CreateSesIdentity
+    Description: CNAME DKIM 2 (nombre)
+    Value: !GetAtt SesDomainIdentity.DkimDNSTokenName2
+  DkimRecord2Value:
+    Condition: CreateSesIdentity
+    Description: CNAME DKIM 2 (valor)
+    Value: !GetAtt SesDomainIdentity.DkimDNSTokenValue2
+  DkimRecord3Name:
+    Condition: CreateSesIdentity
+    Description: CNAME DKIM 3 (nombre)
+    Value: !GetAtt SesDomainIdentity.DkimDNSTokenName3
+  DkimRecord3Value:
+    Condition: CreateSesIdentity
+    Description: CNAME DKIM 3 (valor)
+    Value: !GetAtt SesDomainIdentity.DkimDNSTokenValue3

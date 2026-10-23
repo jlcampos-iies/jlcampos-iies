@@ -1,0 +1,24 @@
+# Pila jlc-web-publica-cert (us-east-1): solo el certificado ACM de CloudFront.
+#
+# REQUISITO Nº 1: validación por DNS SIN HostedZoneId, para que CloudFormation no escriba en
+# Route 53. El titular crea los CNAME de validación (nombres nuevos y únicos) con el botón
+# "Crear registros en Route 53" de la consola de ACM, que solo AÑADE registros.
+AWSTemplateFormatVersion: '2010-09-09'
+Description: jlc-web-publica-cert - certificado ACM (us-east-1) para CloudFront
+
+Resources:
+  Certificate:
+    Type: AWS::CertificateManager::Certificate
+    Properties:
+      DomainName: jlc-ingenieros.com
+      SubjectAlternativeNames:
+        - www.jlc-ingenieros.com
+      ValidationMethod: DNS
+      Tags:
+        - Key: project
+          Value: jlc-web-publica
+
+Outputs:
+  CertificateArn:
+    Description: Parametro CertificateArn de la pila jlc-web-publica
+    Value: !Ref Certificate
