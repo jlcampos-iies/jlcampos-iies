@@ -29,6 +29,8 @@ Tiene que terminar en `RESULTADO: OK` (código de salida 0). Si da `FAIL` **ante
 
 ## Variables que se usan en todo el runbook
 
+Estas variables solo existen en la terminal donde se definen: **volver a ejecutar este bloque en cada terminal nueva** (también si se abre otra para la vuelta atrás). Sin ellas, `render.sh` falla por falta de dominio y `aws route53` por falta de zona.
+
 ```bash
 # Zona de Route 53 (solo lectura)
 ZONA=$(aws route53 list-hosted-zones-by-name --dns-name jlc-ingenieros.com --query 'HostedZones[0].Id' --output text)
@@ -74,17 +76,19 @@ Pasos 2–10 de `infra/README.md` (SSM, SES, OIDC, certificado, pila principal c
 
 ### 3. CNAME de ACM y de DKIM
 
-Se añaden con los botones de ACM (paso 5 de `infra/README.md`) y SES (paso 7). Solo **añaden** nombres nuevos.
+**Ya hecho en el paso 2** (botones de ACM y SES, pasos 5 y 7 de `infra/README.md`); no se repite. Solo confirmar que esos botones no tocaron nada protegido:
 
 ```bash
-scripts/check-isolation.sh --compare   # antes de pulsar cada botón
-# … botón de ACM / botón de SES …
-scripts/check-isolation.sh --compare   # después
+scripts/check-isolation.sh --compare   # RESULTADO: OK
 ```
 
 ### 4. Turnstile y destinatario de SES
 
-Pasos 8 y 9 de `infra/README.md`: widget con `jlc-ingenieros.com` y `$DIST_DOMAIN`, secreto en SSM, `sam deploy` con `TurnstileHostnames=jlc-ingenieros.com,<DistributionDomain>` y verificación de `jlcampos@jlc-ingenieros.com` en SES.
+**Ya hecho en el paso 2** (pasos 8 y 9 de `infra/README.md`: destinatario verificado en SES, widget con `jlc-ingenieros.com` y `$DIST_DOMAIN`, secreto en SSM y `sam deploy` con `TurnstileHostnames=jlc-ingenieros.com,<DistributionDomain>`); no se repite. Confirmar de nuevo:
+
+```bash
+scripts/check-isolation.sh --compare   # RESULTADO: OK
+```
 
 ### 5. Revisión en la URL de pruebas
 
@@ -96,7 +100,13 @@ Debe salir sin ningún `FAIL`. Además, a mano en `https://<DistributionDomain>/
 
 - revisión visual en móvil y escritorio (las tres lenguas, los 6 proyectos, publicaciones, clientes y textos legales);
 - Lighthouse (Chrome → DevTools → Lighthouse) en la home y en una ficha de proyecto: objetivo ≥ 95 en rendimiento, accesibilidad, buenas prácticas y SEO;
-- un **envío real** del formulario en `/contacto/`, comprobando que el correo llega a `jlcampos@jlc-ingenieros.com` con acentos legibles y que «Responder» va al remitente.
+- un **envío real** del formulario en **cada idioma** (`/contacto/`, `/en/contact/` y `/ca/contacte/`), comprobando que llegan los tres correos a `jlcampos@jlc-ingenieros.com` con acentos legibles y que «Responder» va al remitente (en `/ca/contacte/` el widget de Turnstile sale en castellano: Cloudflare no admite catalán);
+- una vez, que las redirecciones conservan la *query string* codificada:
+
+  ```bash
+  curl -sI "https://$DIST_DOMAIN/en/home/?a=b%20c" | grep -i '^location'
+  #   location: /en/?a=b%20c
+  ```
 
 ### 6. Copia de seguridad de WordPress
 
@@ -237,10 +247,37 @@ scripts/check-isolation.sh --compare
 curl -sS -o /dev/null -w '%{http_code}\n' https://jlc-ingenieros.com/   # 200, servido de nuevo por WordPress
 ```
 
-- `rollback` necesita el mismo `$DIST_DOMAIN` que el corte: el `DELETE` del AAAA tiene que coincidir exactamente con el registro creado.
-- Si el AAAA no llegó a crearse (el lote del corte falló), el `DELETE` falla y Route 53 no aplica nada; en ese caso el A tampoco cambió y no hay que deshacer nada (comprobarlo con la consulta de estado del principio).
+- `rollback` necesita el mismo `$DIST_DOMAIN` que el corte (si la terminal es nueva, ejecutar antes el bloque de **Variables**): el `DELETE` del AAAA tiene que coincidir exactamente con el registro creado, y Route 53 aplica el lote entero o nada.
 - Los alias de la distribución (`EnableAliases=true`) pueden quedarse: sin DNS que apunte a CloudFront no tienen efecto.
 - Si se vuelve atrás después de cambiar `SITE_URL`, devolverla a `https://<DistributionDomain>`.
+
+**Si la vuelta atrás falla (cualquier error en el `change-resource-record-sets` o en el `wait`)**, no reintentar a ciegas. Consultar el estado real del apex (solo lectura):
+
+```bash
+aws route53 list-resource-record-sets --hosted-zone-id "$ZONA" \
+  --query "ResourceRecordSets[?Name=='jlc-ingenieros.com.']"
+```
+
+- Si el **A** ya muestra `ResourceRecords` `3.133.180.219` (no `AliasTarget`) y no hay AAAA: la web ya está en WordPress; no hay nada más que deshacer (pasa, por ejemplo, si el lote del corte nunca llegó a aplicarse).
+- Si el **A** todavía muestra `AliasTarget`: devolver **solo el A** a WordPress con el lote de emergencia `rollback-a`, que no toca el AAAA y por eso no puede fallar por él:
+
+  ```bash
+  scripts/dns/render.sh rollback-a > /tmp/jlc-lote.json && cat /tmp/jlc-lote.json
+  CAMBIO=$(aws route53 change-resource-record-sets --hosted-zone-id "$ZONA" \
+    --change-batch file:///tmp/jlc-lote.json --query 'ChangeInfo.Id' --output text)
+  aws route53 wait resource-record-sets-changed --id "$CAMBIO"
+  scripts/check-isolation.sh --compare
+  ```
+
+- Si queda un **AAAA** con `AliasTarget` (haya hecho falta `rollback-a` o no) (los clientes IPv6 seguirían yendo a CloudFront): copiar su `DNSName` **exacto** de la salida de la consulta anterior (con el punto final) y borrarlo aparte con `rollback`, pasándole ese valor:
+
+  ```bash
+  aws route53 list-resource-record-sets --hosted-zone-id "$ZONA" \
+    --query "ResourceRecordSets[?Name=='jlc-ingenieros.com.' && Type=='AAAA'].AliasTarget.DNSName" --output text
+  #   dxxxx.cloudfront.net.
+  ```
+
+  `rollback <ese dominio>` vuelve a escribir el A (ya en `3.133.180.219`, sin efecto) y borra el AAAA; aplicarlo con los cuatro pasos de siempre y terminar con `scripts/check-isolation.sh --compare`.
 
 ## Retirada de WordPress
 

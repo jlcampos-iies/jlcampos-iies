@@ -5,6 +5,8 @@ const APEX = 'jlc-ingenieros.com.';
 const WORDPRESS_IP = '3.133.180.219';
 const CLOUDFRONT_ZONE = 'Z2FDTNDATAQYW2';
 const DOMAIN = 'd1abc2def3ghi4.cloudfront.net';
+// Route 53 guarda el DNSName del alias con punto final; el DELETE tiene que coincidir exactamente.
+const ALIAS_DNS = `${DOMAIN}.`;
 
 type RecordSet = {
   Name: string;
@@ -36,6 +38,7 @@ function find(b: Batch, action: string, type: string) {
 const MODES: [string, string[]][] = [
   ['cutover', [DOMAIN]],
   ['rollback', [DOMAIN]],
+  ['rollback-a', []],
   ['ttl60', []],
   ['ttl300', []],
 ];
@@ -57,7 +60,7 @@ describe('scripts/dns/render.sh', () => {
     const b = batch('cutover', DOMAIN);
     expect(b.Changes).toHaveLength(2);
     for (const rs of [find(b, 'UPSERT', 'A'), find(b, 'CREATE', 'AAAA')]) {
-      expect(rs.AliasTarget).toEqual({ HostedZoneId: CLOUDFRONT_ZONE, DNSName: DOMAIN, EvaluateTargetHealth: false });
+      expect(rs.AliasTarget).toEqual({ HostedZoneId: CLOUDFRONT_ZONE, DNSName: ALIAS_DNS, EvaluateTargetHealth: false });
       expect(rs.TTL).toBeUndefined();
       expect(rs.ResourceRecords).toBeUndefined();
     }
@@ -71,7 +74,21 @@ describe('scripts/dns/render.sh', () => {
     expect(a.ResourceRecords).toEqual([{ Value: WORDPRESS_IP }]);
     expect(a.AliasTarget).toBeUndefined();
     const aaaa = find(b, 'DELETE', 'AAAA');
-    expect(aaaa.AliasTarget).toEqual({ HostedZoneId: CLOUDFRONT_ZONE, DNSName: DOMAIN, EvaluateTargetHealth: false });
+    expect(aaaa.AliasTarget).toEqual({ HostedZoneId: CLOUDFRONT_ZONE, DNSName: ALIAS_DNS, EvaluateTargetHealth: false });
+  });
+
+  it('rollback-a: solo UPSERT A 3.133.180.219 (TTL 60), sin tocar el AAAA', () => {
+    const b = batch('rollback-a');
+    expect(b.Changes).toHaveLength(1);
+    const a = find(b, 'UPSERT', 'A');
+    expect(a.Name).toBe(APEX);
+    expect(a.TTL).toBe(60);
+    expect(a.ResourceRecords).toEqual([{ Value: WORDPRESS_IP }]);
+    expect(a.AliasTarget).toBeUndefined();
+  });
+
+  it.each(['cutover', 'rollback'])('%s: acepta el dominio con punto final (copiado de Route 53) sin duplicarlo', (mode) => {
+    expect(batch(mode, ALIAS_DNS)).toEqual(batch(mode, DOMAIN));
   });
 
   it.each([
@@ -89,11 +106,12 @@ describe('scripts/dns/render.sh', () => {
     ['cutover sin dominio', ['cutover']],
     ['rollback sin dominio', ['rollback']],
     ['dominio que no es de CloudFront', ['cutover', 'evil.example.com']],
-    ['dominio con punto final', ['cutover', `${DOMAIN}.`]],
+    ['dominio con dos puntos finales', ['cutover', `${DOMAIN}..`]],
     ['dominio con comillas (inyeccion JSON)', ['cutover', 'd1"x.cloudfront.net']],
     ['modo desconocido', ['delete-all']],
     ['sin argumentos', []],
     ['argumentos de mas', ['ttl60', DOMAIN]],
+    ['rollback-a con dominio', ['rollback-a', DOMAIN]],
   ])('rechaza %s', (_name, args) => {
     const r = render(...args);
     expect(r.code).not.toBe(0);
