@@ -237,7 +237,9 @@ img {
   background: var(--navy-dark);
   border-color: var(--navy-dark);
 }
-.prose {
+.prose > p,
+.prose > h2,
+.prose > ul {
   max-width: 62rem;
 }
 .prose h2 {
@@ -392,6 +394,9 @@ img {
   border: 1px solid var(--border);
 }
 .map figcaption {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0 0.75rem;
   margin-top: 0.5rem;
   font-size: 0.875rem;
   color: var(--muted);
