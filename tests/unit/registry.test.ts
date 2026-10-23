@@ -47,6 +47,27 @@ describe('allRoutes', () => {
     const ice = routes.find((r) => r.path === '/proyectos/fabrica-de-hielo/');
     expect(ice).toMatchObject({ kind: 'project', key: 'fabrica-de-hielo', alternates: { es: '/proyectos/fabrica-de-hielo/' } });
   });
+
+  it('alternates multilingües de páginas y proyectos', async () => {
+    const routes = await allRoutes();
+    const studio = { es: '/estudio/', en: '/en/studio/', ca: '/ca/estudi/' };
+    const ice = {
+      es: '/proyectos/fabrica-de-hielo/',
+      en: '/en/projects/ice-factory/',
+      ca: '/ca/projectes/fabrica-de-gel/',
+    };
+    for (const path of Object.values(studio)) {
+      expect(routes.find((r) => r.path === path)?.alternates, path).toEqual(studio);
+    }
+    for (const path of Object.values(ice)) {
+      expect(routes.find((r) => r.path === path)?.alternates, path).toEqual(ice);
+    }
+    expect(routes.find((r) => r.path === '/en/projects/ice-factory/')).toMatchObject({
+      lang: 'en',
+      kind: 'project',
+      key: 'fabrica-de-hielo',
+    });
+  });
 });
 
 describe('colecciones de datos', () => {
@@ -65,5 +86,11 @@ describe('colecciones de datos', () => {
     expect(es).toHaveLength(6);
     expect(es.every((p) => p.data.cover)).toBe(true);
     expect(new Set(es.map((p) => p.data.order)).size).toBe(6);
+  });
+
+  it('las páginas con hero tienen heroAlt en su idioma', async () => {
+    const withHero = (await getCollection('pages')).filter((p) => p.data.hero);
+    expect(withHero.length).toBeGreaterThan(0);
+    for (const p of withHero) expect(p.data.heroAlt, p.id).toBeTruthy();
   });
 });
