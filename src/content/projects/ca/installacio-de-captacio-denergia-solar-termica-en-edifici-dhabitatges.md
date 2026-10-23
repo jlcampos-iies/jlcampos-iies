@@ -3,6 +3,7 @@ translationKey: "instalacion-de-captacion-de-energia-solar-termica-en-edificio-d
 lang: "ca"
 slug: "installacio-de-captacio-denergia-solar-termica-en-edifici-dhabitatges"
 title: "Instal·lació de captació d'energia solar tèrmica en edifici d'habitatges"
+seoTitle: "Energia solar tèrmica en edifici d'habitatges"
 description: "Sistema de captació d'energia solar tèrmica amb captadors de tubs de buit per cobrir la demanda d'aigua calenta sanitària (ACS) d'un edifici residencial."
 order: 2
 ---

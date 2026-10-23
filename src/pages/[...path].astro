@@ -35,7 +35,7 @@ export async function getStaticPaths() {
 }
 
 const { route, entry } = Astro.props;
-const { lang, title, description } = entry.data;
+const { lang, title, seoTitle, description } = entry.data;
 
 const pageViews = {
   home: Home,
@@ -65,6 +65,7 @@ if (route.kind === 'project') {
 <Base
   lang={lang}
   title={title}
+  seoTitle={seoTitle}
   description={description}
   path={route.path}
   alternates={route.alternates}

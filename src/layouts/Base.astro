@@ -10,6 +10,8 @@ import Footer from '../components/Footer.astro';
 interface Props {
   lang: Lang;
   title: string;
+  /** Título corto para <title>/og:title cuando title es demasiado largo (≤ 60 caracteres). */
+  seoTitle?: string;
   description: string;
   path: string;
   alternates: Partial<Record<Lang, string>>;
@@ -20,6 +22,7 @@ interface Props {
 const {
   lang,
   title,
+  seoTitle,
   description,
   path,
   alternates,
@@ -30,8 +33,9 @@ const {
 
 // <title> de como mucho 70 caracteres: sin sufijo si no cabe, y recortado en palabra si aun así excede.
 const TITLE_MAX = 70;
-const withSuffix = title.includes(site.name) ? title : `${title} | ${site.name}`;
-const fitted = withSuffix.length <= TITLE_MAX ? withSuffix : title;
+const headTitle = seoTitle ?? title;
+const withSuffix = headTitle.includes(site.name) ? headTitle : `${headTitle} | ${site.name}`;
+const fitted = withSuffix.length <= TITLE_MAX ? withSuffix : headTitle;
 const fullTitle =
   fitted.length <= TITLE_MAX ? fitted : `${fitted.slice(0, TITLE_MAX - 1).replace(/\s+\S*$/, '')}…`;
 const canonical = absoluteUrl(path);

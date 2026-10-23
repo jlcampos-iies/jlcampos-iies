@@ -3,6 +3,7 @@ translationKey: "instalacion-de-captacion-de-energia-solar-termica-en-edificio-d
 lang: "en"
 slug: "solar-thermal-installation-in-residential-building"
 title: "Solar thermal installation in a residential building"
+seoTitle: "Solar thermal in a residential building"
 description: "Solar thermal collection system with evacuated-tube collectors to meet the domestic hot water (DHW) needs of a residential building."
 order: 2
 ---

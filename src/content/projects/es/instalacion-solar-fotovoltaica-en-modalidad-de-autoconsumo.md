@@ -3,6 +3,7 @@ translationKey: "instalacion-solar-fotovoltaica-en-modalidad-de-autoconsumo"
 lang: "es"
 slug: "instalacion-solar-fotovoltaica-en-modalidad-de-autoconsumo"
 title: "Instalación solar fotovoltaica en modalidad de autoconsumo"
+seoTitle: "Instalación fotovoltaica de autoconsumo"
 description: "Este proyecto consistió en la implementación de una instalación solar fotovoltaica en modalidad de autoconsumo para un establecimiento turístico, con el…"
 order: 5
 cover: "../../../assets/images/projects/instalacion-solar-fotovoltaica-en-modalidad-de-autoconsumo/fotovoltaica-thum.jpg"

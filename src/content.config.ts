@@ -15,6 +15,8 @@ const pages = defineCollection({
         key: z.enum(pageKeys),
         lang,
         title: z.string(),
+        // <title> alternativo y corto cuando title + " | JLC Ingenieros" pasaría de 70 caracteres.
+        seoTitle: z.string().max(60).optional(),
         description: z.string().max(160),
         hero: image().optional(),
         heroAlt: z.string().optional(),
@@ -36,6 +38,8 @@ const projects = defineCollection({
         lang,
         slug: z.string(),
         title: z.string(),
+        // <title> alternativo y corto cuando title + " | JLC Ingenieros" pasaría de 70 caracteres.
+        seoTitle: z.string().max(60).optional(),
         description: z.string().max(160),
         order: z.number(),
         cover: image().optional(),

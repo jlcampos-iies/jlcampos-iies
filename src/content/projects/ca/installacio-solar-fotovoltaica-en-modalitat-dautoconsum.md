@@ -3,6 +3,7 @@ translationKey: "instalacion-solar-fotovoltaica-en-modalidad-de-autoconsumo"
 lang: "ca"
 slug: "installacio-solar-fotovoltaica-en-modalitat-dautoconsum"
 title: "Instal·lació solar fotovoltaica en modalitat d'autoconsum"
+seoTitle: "Instal·lació fotovoltaica d'autoconsum"
 description: "Instal·lació solar fotovoltaica d'autoconsum per a un establiment turístic de Cala Saona (Formentera), dissenyada per optimitzar-ne el consum energètic."
 order: 5
 ---

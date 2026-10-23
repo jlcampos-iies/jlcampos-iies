@@ -85,3 +85,23 @@ describe('menú móvil sin JS', () => {
     expect(page.querySelector('main#main')).not.toBeNull();
   });
 });
+
+describe('<title>', () => {
+  const titles = distFiles().map((file) => {
+    const doc = readPage(file === '404.html' ? '/404.html' : '/' + file.replace(/index\.html$/, ''));
+    return [file, doc.querySelector('title')!.text] as const;
+  });
+
+  it.each(titles)('%s: ≤ 70 caracteres, completo y con la marca', (_file, title) => {
+    expect(title.length).toBeLessThanOrEqual(70);
+    expect(title).not.toContain('…');
+    expect(title).toContain('JLC Ingenieros');
+  });
+
+  it('las fichas de títulos largos usan su seoTitle', () => {
+    const title = (p: string) => readPage(p).querySelector('title')!.text;
+    expect(
+      title('/proyectos/instalacion-de-captacion-de-energia-solar-termica-en-edificio-de-viviendas/'),
+    ).toBe('Energía solar térmica en edificio de viviendas | JLC Ingenieros');
+  });
+});
