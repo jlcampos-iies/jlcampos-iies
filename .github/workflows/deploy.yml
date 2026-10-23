@@ -1,0 +1,85 @@
+name: Deploy
+
+on:
+  push:
+    branches: [main]
+
+permissions:
+  contents: read
+
+jobs:
+  test:
+    uses: ./.github/workflows/ci.yml
+
+  deploy:
+    needs: test
+    # Mientras la pila no esté desplegada AWS_ROLE_ARN no existe: el job se omite sin fallar.
+    if: vars.AWS_ROLE_ARN != ''
+    runs-on: ubuntu-latest
+    permissions:
+      id-token: write
+      contents: read
+    concurrency:
+      group: deploy
+      cancel-in-progress: false
+    env:
+      S3_BUCKET: ${{ vars.S3_BUCKET }}
+      CF_DISTRIBUTION_ID: ${{ vars.CF_DISTRIBUTION_ID }}
+      CF_FUNCTION_NAME: ${{ vars.CF_FUNCTION_NAME }}
+      CONTACT_FUNCTION_NAME: ${{ vars.CONTACT_FUNCTION_NAME }}
+      SITE_URL: ${{ vars.SITE_URL }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version-file: .nvmrc
+          cache: npm
+      - uses: aws-actions/configure-aws-credentials@v4
+        with:
+          role-to-assume: ${{ vars.AWS_ROLE_ARN }}
+          aws-region: eu-west-3
+      - run: npm ci
+      - run: npm run build
+        env:
+          PUBLIC_TURNSTILE_SITE_KEY: ${{ vars.PUBLIC_TURNSTILE_SITE_KEY }}
+      - run: npm run build:edge
+
+      # Los ficheros de _astro llevan hash en el nombre: inmutables. Primero ellos, para que
+      # el HTML nuevo nunca referencie un asset que todavía no está en el bucket.
+      - name: Subir assets con hash (caché inmutable)
+        run: aws s3 sync dist/_astro "s3://$S3_BUCKET/_astro" --cache-control "public,max-age=31536000,immutable"
+      # --exclude también protege _astro/ del --delete: los assets antiguos se conservan para
+      # que el HTML cacheado en navegadores o en CloudFront no se quede sin sus ficheros.
+      - name: Subir el resto (HTML e imágenes, sin caché)
+        run: aws s3 sync dist "s3://$S3_BUCKET" --delete --exclude "_astro/*" --cache-control "no-cache"
+
+      - name: Actualizar la CloudFront Function si cambió
+        run: |
+          set -euo pipefail
+          aws cloudfront get-function --name "$CF_FUNCTION_NAME" --stage LIVE "$RUNNER_TEMP/live.js" > /dev/null
+          if cmp -s "$RUNNER_TEMP/live.js" edge/dist/viewer-request.js; then
+            echo "La CloudFront Function no ha cambiado."
+            exit 0
+          fi
+          ETAG=$(aws cloudfront describe-function --name "$CF_FUNCTION_NAME" --stage DEVELOPMENT --query ETag --output text)
+          CONFIG=$(aws cloudfront describe-function --name "$CF_FUNCTION_NAME" --stage DEVELOPMENT --query FunctionSummary.FunctionConfig --output json)
+          NEW_ETAG=$(aws cloudfront update-function --name "$CF_FUNCTION_NAME" --if-match "$ETAG" \
+            --function-config "$CONFIG" --function-code fileb://edge/dist/viewer-request.js \
+            --query ETag --output text)
+          aws cloudfront publish-function --name "$CF_FUNCTION_NAME" --if-match "$NEW_ETAG" > /dev/null
+          echo "CloudFront Function publicada."
+
+      - name: Actualizar la Lambda del formulario
+        run: |
+          set -euo pipefail
+          # Mismo contenido que CodeUri ../lambda/contact en la plantilla SAM.
+          zip -j "$RUNNER_TEMP/contact.zip" lambda/contact/*.mjs lambda/contact/package.json
+          aws lambda update-function-code --function-name "$CONTACT_FUNCTION_NAME" \
+            --zip-file "fileb://$RUNNER_TEMP/contact.zip" > /dev/null
+          aws lambda wait function-updated --function-name "$CONTACT_FUNCTION_NAME"
+
+      - name: Invalidar CloudFront
+        run: aws cloudfront create-invalidation --distribution-id "$CF_DISTRIBUTION_ID" --paths "/*" > /dev/null
+
+      - name: Comprobaciones de humo
+        run: scripts/smoke.sh "$SITE_URL"

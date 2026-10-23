@@ -1,8 +1,12 @@
 name: CI
 
+# En main no se dispara por push: ese push lo ejecuta deploy.yml, que reutiliza este
+# workflow (workflow_call) como paso previo al despliegue, para no correr la CI dos veces.
 on:
   push:
+    branches-ignore: [main]
   pull_request:
+  workflow_call:
 
 permissions:
   contents: read
