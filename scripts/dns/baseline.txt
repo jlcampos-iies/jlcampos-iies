@@ -1,0 +1,22 @@
+6wmkdnrfnxi3midc2doz4m5wc77qz7g3._domainkey.jlc-ingenieros.com. CNAME 6wmkdnrfnxi3midc2doz4m5wc77qz7g3.dkim.amazonses.com.
+_dmarc.jlc-ingenieros.com. TXT v=DMARC1; p=none;
+areaprivada.jlc-ingenieros.com. A 3.12.236.157
+areaprivada.jlc-ingenieros.com. TXT 'q1e3sufa64sob8p9thgav7nki4'
+demo.jlc-ingenieros.com. A 3.12.236.157
+firebase1._domainkey.jlc-ingenieros.com. CNAME mail-jlc--ingenieros-com.dkim1._domainkey.firebasemail.com.
+firebase2._domainkey.jlc-ingenieros.com. CNAME mail-jlc--ingenieros-com.dkim2._domainkey.firebasemail.com.
+h3glg2fy22z7qzzye6g6zhg3tcuingqn._domainkey.jlc-ingenieros.com. CNAME h3glg2fy22z7qzzye6g6zhg3tcuingqn.dkim.amazonses.com.
+jlc-ingenieros.com. MX 10 mx01.mail.icloud.com.
+jlc-ingenieros.com. MX 20 mx02.mail.icloud.com.
+jlc-ingenieros.com. NS ns-1165.awsdns-17.org.
+jlc-ingenieros.com. NS ns-1630.awsdns-11.co.uk.
+jlc-ingenieros.com. NS ns-500.awsdns-62.com.
+jlc-ingenieros.com. NS ns-520.awsdns-01.net.
+jlc-ingenieros.com. TXT apple-domain=x1cUNRREqKDaDkHg
+jlc-ingenieros.com. TXT firebase=gesnormauth
+jlc-ingenieros.com. TXT sqqvldaunlruvdjuubhdvmh25j
+jlc-ingenieros.com. TXT v=spf1 include:icloud.com include:_spf.firebasemail.com ~all
+met.jlc-ingenieros.com. A 3.12.236.157
+sig1._domainkey.jlc-ingenieros.com. CNAME sig1.dkim.jlc-ingenieros.com.at.icloudmailadmin.com.
+vdd56aijvyidt5xoo5g2lbdy73d7m2uh._domainkey.jlc-ingenieros.com. CNAME vdd56aijvyidt5xoo5g2lbdy73d7m2uh.dkim.amazonses.com.
+www.jlc-ingenieros.com. CNAME jlc-ingenieros.com.
