@@ -1,0 +1,74 @@
+---
+import { pagePath, type Lang } from '../i18n/routes';
+import { t } from '../i18n/ui';
+
+interface Props {
+  lang: Lang;
+}
+const { lang } = Astro.props;
+const siteKey = import.meta.env.PUBLIC_TURNSTILE_SITE_KEY;
+if (!siteKey) {
+  throw new Error(
+    'Falta PUBLIC_TURNSTILE_SITE_KEY: defínela al compilar (en CI, la clave de pruebas 1x00000000000000000000AA).',
+  );
+}
+const codes = ['validation', 'captcha', 'send', 'network'] as const;
+---
+<form
+  class="contact-form"
+  method="post"
+  action="/api/contact"
+  data-contact-form
+  data-thanks={pagePath('contactThanks', lang)}
+>
+  <input type="hidden" name="lang" value={lang} />
+  {codes.map((code) => (
+    <p id={`form-error-${code}`} class="form-error" role="alert" tabindex="-1">{t(lang, `error.${code}`)}</p>
+  ))}
+  <div class="field">
+    <label for="cf-name">{t(lang, 'form.name')}</label>
+    <input id="cf-name" name="name" type="text" required maxlength="100" autocomplete="name" />
+  </div>
+  <div class="field">
+    <label for="cf-email">{t(lang, 'form.email')}</label>
+    <input id="cf-email" name="email" type="email" required maxlength="254" autocomplete="email" />
+  </div>
+  <div class="field">
+    <label for="cf-phone">{t(lang, 'form.phone')}</label>
+    <input
+      id="cf-phone"
+      name="phone"
+      type="tel"
+      maxlength="30"
+      pattern="[0-9 +()\-]*"
+      autocomplete="tel"
+    />
+  </div>
+  <div class="field">
+    <label for="cf-message">{t(lang, 'form.message')}</label>
+    <textarea
+      id="cf-message"
+      name="message"
+      rows="6"
+      required
+      minlength="10"
+      maxlength="5000"
+      aria-describedby="cf-message-help"></textarea>
+    <small id="cf-message-help">{t(lang, 'form.messageHelp')}</small>
+  </div>
+  <div class="hp" aria-hidden="true">
+    <label for="cf-website">Website</label>
+    <input id="cf-website" name="website" type="text" tabindex="-1" autocomplete="off" />
+  </div>
+  <div class="field field--check">
+    <label>
+      <input type="checkbox" name="privacy" value="on" required />
+      <a href={pagePath('privacy', lang)} target="_blank" rel="noopener">{t(lang, 'form.privacy')}</a>
+    </label>
+  </div>
+  <div class="cf-turnstile" data-sitekey={siteKey} data-language={lang}></div>
+  <button class="btn" type="submit" data-sending={t(lang, 'form.sending')}>{t(lang, 'form.submit')}</button>
+</form>
+<script>
+  import '../scripts/contact-form.ts';
+</script>

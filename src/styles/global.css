@@ -401,8 +401,67 @@ img {
   font-size: 0.875rem;
   color: var(--muted);
 }
-#contact-form-slot {
-  min-height: 2rem;
+
+/* Formulario de contacto */
+.contact-form {
+  display: grid;
+  gap: 1rem;
+  max-width: 40rem;
+}
+.field {
+  display: grid;
+  gap: 0.25rem;
+}
+.field label {
+  font-weight: 600;
+}
+.field input:not([type='checkbox']),
+.field textarea {
+  width: 100%;
+  padding: 0.625rem 0.75rem;
+  font: inherit;
+  color: var(--text);
+  background: var(--bg);
+  border: 1px solid var(--muted);
+  border-radius: var(--radius);
+}
+.field small {
+  color: var(--muted);
+}
+.field--check label {
+  display: flex;
+  gap: 0.5rem;
+  align-items: flex-start;
+  font-weight: 400;
+}
+.field--check input {
+  margin-top: 0.35rem;
+}
+/* Honeypot: fuera de pantalla (no display:none, para que los bots lo rellenen). */
+.hp {
+  position: absolute;
+  left: -10000px;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+}
+/* Sin JS el error se ve por :target (la Lambda redirige a ?error=X#form-error-X). */
+.form-error {
+  display: none;
+  margin: 0;
+  padding: 0.75rem 1rem;
+  color: #7f1d1d;
+  background: #fef2f2;
+  border-left: 4px solid #b91c1c;
+  border-radius: var(--radius);
+}
+.form-error:target,
+.form-error.is-visible {
+  display: block;
+}
+.contact-form button[disabled] {
+  opacity: 0.6;
+  cursor: progress;
 }
 
 .notfound {

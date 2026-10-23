@@ -52,7 +52,7 @@ describe('vistas en castellano', () => {
     expect(links).toHaveLength(7);
   });
 
-  it('/contacto/ tiene dirección, mapa, atribución y hueco del formulario', () => {
+  it('/contacto/ tiene dirección, mapa, atribución y formulario', () => {
     const page = readPage('/contacto/');
     const main = page.querySelector('main')!;
     expect(main.text).toContain('C/. Carlos III, 28 Bajo');
@@ -62,7 +62,7 @@ describe('vistas en castellano', () => {
         'a[href="https://www.google.com/maps/search/?api=1&query=C.+Carlos+III+28+07800+Eivissa"]',
       ),
     ).not.toBeNull();
-    expect(main.querySelector('#contact-form-slot')).not.toBeNull();
+    expect(main.querySelector('form[data-contact-form]')).not.toBeNull();
     expect(page.querySelector('iframe')).toBeNull();
   });
 

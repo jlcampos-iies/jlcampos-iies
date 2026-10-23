@@ -3,6 +3,8 @@ import { Picture } from 'astro:assets';
 import { render, type CollectionEntry } from 'astro:content';
 import map from '../assets/images/mapa-contacto.png';
 import { t } from '../i18n/ui';
+import ContactForm from '../components/ContactForm.astro';
+import Turnstile from '../components/Turnstile.astro';
 
 interface Props {
   entry: CollectionEntry<'pages'>;
@@ -35,6 +37,7 @@ const mapUrl = 'https://www.google.com/maps/search/?api=1&query=C.+Carlos+III+28
   </div>
   <section aria-labelledby="form-heading">
     <h2 id="form-heading">{t(lang, 'contact.formHeading')}</h2>
-    <div id="contact-form-slot"></div>
+    <ContactForm lang={lang} />
+    <Turnstile />
   </section>
 </div>
