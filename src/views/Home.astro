@@ -1,0 +1,46 @@
+---
+import { Picture } from 'astro:assets';
+import type { CollectionEntry } from 'astro:content';
+import { pagePath } from '../i18n/routes';
+import { t } from '../i18n/ui';
+
+interface Props {
+  entry: CollectionEntry<'pages'>;
+}
+const { entry } = Astro.props;
+const { title, description, hero, services = [], lang } = entry.data;
+---
+<section class="hero">
+  <div class="container hero__inner">
+    <div class="hero__text">
+      <h1>{title}</h1>
+      <p class="lead">{description}</p>
+      <a class="btn" href={pagePath('projects', lang)}>{t(lang, 'cta.viewProjects')}</a>
+    </div>
+    {
+      hero && (
+        <Picture
+          class="hero__img"
+          src={hero}
+          formats={['avif', 'webp']}
+          widths={[400, 800, 1200]}
+          sizes="(min-width: 768px) 50vw, 100vw"
+          alt="Instalación solar sobre cubierta en Ibiza"
+          loading="eager"
+        />
+      )
+    }
+  </div>
+</section>
+<section class="container page-content">
+  <ul class="services">
+    {
+      services.map((s) => (
+        <li class="service">
+          <h2>{s.title}</h2>
+          <p>{s.text}</p>
+        </li>
+      ))
+    }
+  </ul>
+</section>

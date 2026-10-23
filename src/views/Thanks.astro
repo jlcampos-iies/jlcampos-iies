@@ -1,0 +1,16 @@
+---
+import { render, type CollectionEntry } from 'astro:content';
+import { pagePath } from '../i18n/routes';
+import { t } from '../i18n/ui';
+
+interface Props {
+  entry: CollectionEntry<'pages'>;
+}
+const { entry } = Astro.props;
+const { Content } = await render(entry);
+---
+<div class="container page-content prose">
+  <h1>{entry.data.title}</h1>
+  <Content />
+  <p><a class="btn" href={pagePath('home', entry.data.lang)}>{t(entry.data.lang, 'nav.home')}</a></p>
+</div>

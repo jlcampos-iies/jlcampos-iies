@@ -1,8 +1,19 @@
 ---
-import { getCollection } from 'astro:content';
+import { getCollection, type CollectionEntry } from 'astro:content';
 import Base from '../layouts/Base.astro';
 import { allRoutes } from '../lib/registry';
-import { jsonLdOrganization } from '../lib/seo';
+import { jsonLdBreadcrumb, jsonLdOrganization } from '../lib/seo';
+import { pagePath } from '../i18n/routes';
+import { t } from '../i18n/ui';
+import Clients from '../views/Clients.astro';
+import Contact from '../views/Contact.astro';
+import Home from '../views/Home.astro';
+import Project from '../views/Project.astro';
+import Projects from '../views/Projects.astro';
+import Prose from '../views/Prose.astro';
+import Publications from '../views/Publications.astro';
+import Studio from '../views/Studio.astro';
+import Thanks from '../views/Thanks.astro';
 
 export async function getStaticPaths() {
   const [routes, pages, projects] = await Promise.all([
@@ -18,16 +29,41 @@ export async function getStaticPaths() {
     if (!entry) throw new Error(`Sin contenido para ${route.path}`);
     return {
       params: { path: route.path.replace(/^\/|\/$/g, '') || undefined },
-      props: { route, title: entry.data.title, description: entry.data.description },
+      props: { route, entry },
     };
   });
 }
 
-const { route, title, description } = Astro.props;
-const jsonLd = route.kind === 'page' && route.key === 'home' ? [jsonLdOrganization(route.lang)] : [];
+const { route, entry } = Astro.props;
+const { lang, title, description } = entry.data;
+
+const pageViews = {
+  home: Home,
+  studio: Studio,
+  clients: Clients,
+  projects: Projects,
+  publications: Publications,
+  contact: Contact,
+  contactThanks: Thanks,
+} as const;
+const PageView = route.kind === 'page' ? (pageViews[route.key as keyof typeof pageViews] ?? Prose) : undefined;
+const pageEntry = entry as CollectionEntry<'pages'>;
+const projectEntry = entry as CollectionEntry<'projects'>;
+
+const jsonLd: object[] = [];
+if (route.kind === 'page' && route.key === 'home') jsonLd.push(jsonLdOrganization(lang));
+if (route.kind === 'project') {
+  jsonLd.push(
+    jsonLdBreadcrumb([
+      { name: t(lang, 'nav.home'), path: pagePath('home', lang) },
+      { name: t(lang, 'nav.projects'), path: pagePath('projects', lang) },
+      { name: title, path: route.path },
+    ]),
+  );
+}
 ---
 <Base
-  lang={route.lang}
+  lang={lang}
   title={title}
   description={description}
   path={route.path}
@@ -35,7 +71,5 @@ const jsonLd = route.kind === 'page' && route.key === 'home' ? [jsonLdOrganizati
   noindex={route.noindex}
   jsonLd={jsonLd}
 >
-  <div class="container page-content">
-    <h1>{title}</h1>
-  </div>
+  {PageView ? <PageView entry={pageEntry} /> : <Project entry={projectEntry} />}
 </Base>

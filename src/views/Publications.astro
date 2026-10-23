@@ -1,0 +1,38 @@
+---
+import { Picture } from 'astro:assets';
+import { getCollection, render, type CollectionEntry } from 'astro:content';
+import { t } from '../i18n/ui';
+
+interface Props {
+  entry: CollectionEntry<'pages'>;
+}
+const { entry } = Astro.props;
+const { lang } = entry.data;
+const books = await getCollection('publications');
+const { Content } = await render(entry);
+---
+<div class="container page-content prose">
+  <h1>{entry.data.title}</h1>
+  <Content />
+  <ul class="books">
+    {
+      books.map(({ data }) => (
+        <li class="book">
+          <Picture
+            src={data.cover}
+            formats={['avif', 'webp']}
+            widths={[200, 400]}
+            sizes="200px"
+            alt={data.title[lang]}
+            loading="lazy"
+          />
+          <div>
+            <h2>{data.title[lang]}</h2>
+            <p>{data.summary[lang]}</p>
+            <a class="btn" href={data.amazonUrl} rel="noopener">{t(lang, 'publications.buy')}</a>
+          </div>
+        </li>
+      ))
+    }
+  </ul>
+</div>

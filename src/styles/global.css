@@ -217,3 +217,230 @@ img {
 .page-content {
   padding-block: 2rem;
 }
+
+/* Vistas */
+.lead {
+  font-size: 1.125rem;
+  color: var(--muted);
+}
+.btn {
+  display: inline-block;
+  padding: 0.625rem 1.25rem;
+  font-weight: 700;
+  text-decoration: none;
+  color: var(--on-navy);
+  background: var(--navy);
+  border: 2px solid var(--navy);
+  border-radius: var(--radius);
+}
+.btn:hover {
+  background: var(--navy-dark);
+  border-color: var(--navy-dark);
+}
+.prose {
+  max-width: 62rem;
+}
+.prose h2 {
+  margin-top: 2rem;
+}
+.prose img,
+.hero__img,
+.split__img,
+.card img,
+.gallery img,
+.project__cover,
+.map img {
+  display: block;
+  border-radius: var(--radius);
+}
+
+.hero {
+  background: var(--bg-light);
+}
+.hero__inner {
+  display: grid;
+  gap: 1.5rem;
+  padding-block: 2rem;
+  align-items: center;
+}
+.hero__text h1 {
+  margin-top: 0;
+  font-size: 2rem;
+}
+.hero__img {
+  width: 100%;
+  height: auto;
+}
+
+.services,
+.cards,
+.gallery,
+.books,
+.client-list {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+.services {
+  display: grid;
+  gap: 1rem;
+}
+.service {
+  padding: 1.25rem;
+  background: var(--bg-light);
+  border-top: 4px solid var(--slate);
+  border-radius: var(--radius);
+}
+.service h2 {
+  margin: 0 0 0.5rem;
+  font-size: 1.125rem;
+}
+.service p {
+  margin: 0;
+}
+
+.cards,
+.gallery {
+  display: grid;
+  gap: 1.25rem;
+}
+.card__link {
+  display: block;
+  height: 100%;
+  color: inherit;
+  text-decoration: none;
+  background: var(--bg);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  overflow: hidden;
+}
+.card__link:hover,
+.card__link:focus-visible {
+  border-color: var(--navy);
+}
+.card img {
+  width: 100%;
+  aspect-ratio: 4 / 3;
+  object-fit: cover;
+  border-radius: 0;
+}
+.card__title {
+  margin: 0;
+  padding: 0.75rem 1rem 1rem;
+  font-size: 1.125rem;
+}
+.gallery {
+  margin-block: 1.5rem;
+}
+.gallery img,
+.project__cover {
+  width: 100%;
+  height: auto;
+}
+.project__cover {
+  margin-bottom: 1.5rem;
+}
+
+.client-list {
+  display: grid;
+  gap: 0.5rem 1.5rem;
+  margin-top: 1.5rem;
+}
+.client-list li {
+  padding: 0.75rem 1rem;
+  font-weight: 600;
+  color: var(--navy);
+  background: var(--bg-light);
+  border-left: 4px solid var(--slate);
+  border-radius: var(--radius);
+}
+
+.books {
+  display: grid;
+  gap: 2rem;
+  margin-top: 2rem;
+}
+.book {
+  display: grid;
+  gap: 1rem;
+  align-items: start;
+}
+.book img {
+  width: 10rem;
+  height: auto;
+}
+.book h2 {
+  margin-top: 0;
+  font-size: 1.25rem;
+}
+
+.split {
+  display: grid;
+  gap: 1.5rem;
+  align-items: start;
+}
+.split__img {
+  width: 100%;
+  height: auto;
+}
+.map {
+  margin: 0;
+}
+.map img {
+  width: 100%;
+  height: auto;
+  border: 1px solid var(--border);
+}
+.map figcaption {
+  margin-top: 0.5rem;
+  font-size: 0.875rem;
+  color: var(--muted);
+}
+#contact-form-slot {
+  min-height: 2rem;
+}
+
+.notfound {
+  display: grid;
+  gap: 2rem;
+}
+.notfound h1,
+.notfound h2 {
+  margin-top: 0;
+  font-size: 1.5rem;
+}
+
+@media (min-width: 768px) {
+  .hero__inner {
+    grid-template-columns: 1fr 1fr;
+    padding-block: 3rem;
+  }
+  .hero__text h1 {
+    font-size: 2.5rem;
+  }
+  .services {
+    grid-template-columns: repeat(2, 1fr);
+  }
+  .cards,
+  .gallery {
+    grid-template-columns: repeat(3, 1fr);
+  }
+  .client-list {
+    grid-template-columns: repeat(2, 1fr);
+  }
+  .book {
+    grid-template-columns: 10rem 1fr;
+    gap: 1.5rem;
+  }
+  .split {
+    grid-template-columns: 1fr 1fr;
+  }
+  .notfound {
+    grid-template-columns: repeat(3, 1fr);
+  }
+}
+@media (min-width: 1024px) {
+  .services {
+    grid-template-columns: repeat(4, 1fr);
+  }
+}

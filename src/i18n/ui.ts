@@ -28,6 +28,11 @@ const es = {
   'footer.terms': 'Términos y condiciones',
   'notFound.title': 'Página no encontrada',
   'notFound.text': 'La página que buscas no existe o ha cambiado de dirección.',
+  'contact.formHeading': "Envíenos un mensaje",
+  'contact.mapAlt': "Mapa con la ubicación del estudio en la calle Carlos III de Eivissa",
+  'contact.mapLink': "Ver en Google Maps",
+  'publications.buy': "Ver en Amazon",
+  'project.back': "Volver a proyectos",
 } as const;
 
 export type UiKey = keyof typeof es;
@@ -60,6 +65,11 @@ const en: Record<UiKey, string> = {
   'footer.terms': 'Terms and conditions',
   'notFound.title': 'Page not found',
   'notFound.text': 'The page you are looking for does not exist or has moved.',
+  'contact.formHeading': "Send us a message",
+  'contact.mapAlt': "Map showing the studio location on Carlos III street, Eivissa",
+  'contact.mapLink': "View on Google Maps",
+  'publications.buy': "View on Amazon",
+  'project.back': "Back to projects",
 };
 
 const ca: Record<UiKey, string> = {
@@ -90,6 +100,11 @@ const ca: Record<UiKey, string> = {
   'footer.terms': 'Termes i condicions',
   'notFound.title': 'Pàgina no trobada',
   'notFound.text': "La pàgina que busques no existeix o ha canviat d'adreça.",
+  'contact.formHeading': "Envieu-nos un missatge",
+  'contact.mapAlt': "Mapa amb la ubicació de l'estudi al carrer Carles III d'Eivissa",
+  'contact.mapLink': "Veure a Google Maps",
+  'publications.buy': "Veure a Amazon",
+  'project.back': "Tornar a projectes",
 };
 
 export const UI: Record<Lang, Record<UiKey, string>> = { es, en, ca };

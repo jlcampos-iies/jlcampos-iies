@@ -1,0 +1,40 @@
+---
+import { Picture } from 'astro:assets';
+import { render, type CollectionEntry } from 'astro:content';
+import map from '../assets/images/mapa-contacto.png';
+import { t } from '../i18n/ui';
+
+interface Props {
+  entry: CollectionEntry<'pages'>;
+}
+const { entry } = Astro.props;
+const { lang } = entry.data;
+const { Content } = await render(entry);
+const mapUrl = 'https://www.google.com/maps/search/?api=1&query=C.+Carlos+III+28+07800+Eivissa';
+---
+<div class="container page-content prose">
+  <h1>{entry.data.title}</h1>
+  <div class="split">
+    <div><Content /></div>
+    <figure class="map">
+      <a href={mapUrl} rel="noopener" title={t(lang, 'contact.mapLink')}>
+        <Picture
+          src={map}
+          formats={['avif', 'webp']}
+          widths={[400, 800]}
+          sizes="(min-width: 768px) 50vw, 100vw"
+          alt={t(lang, 'contact.mapAlt')}
+          loading="lazy"
+        />
+      </a>
+      <figcaption>
+        <a href={mapUrl} rel="noopener">{t(lang, 'contact.mapLink')}</a> ·
+        <a href="https://www.openstreetmap.org/copyright" rel="noopener">© OpenStreetMap</a>
+      </figcaption>
+    </figure>
+  </div>
+  <section aria-labelledby="form-heading">
+    <h2 id="form-heading">{t(lang, 'contact.formHeading')}</h2>
+    <div id="contact-form-slot"></div>
+  </section>
+</div>

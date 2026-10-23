@@ -1,0 +1,30 @@
+---
+import { Picture } from 'astro:assets';
+import { render, type CollectionEntry } from 'astro:content';
+
+interface Props {
+  entry: CollectionEntry<'pages'>;
+}
+const { entry } = Astro.props;
+const { hero } = entry.data;
+const { Content } = await render(entry);
+---
+<div class="container page-content prose">
+  <h1>{entry.data.title}</h1>
+  <div class="split">
+    <div><Content /></div>
+    {
+      hero && (
+        <Picture
+          class="split__img"
+          src={hero}
+          formats={['avif', 'webp']}
+          widths={[400, 800, 1200]}
+          sizes="(min-width: 768px) 40vw, 100vw"
+          alt="Ingeniería industrial: instalaciones y proyectos del estudio"
+          loading="eager"
+        />
+      )
+    }
+  </div>
+</div>
