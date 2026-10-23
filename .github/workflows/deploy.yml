@@ -3,6 +3,9 @@ name: Deploy
 on:
   push:
     branches: [main]
+  # Primer despliegue (o republicar) sin push: `gh workflow run deploy.yml --ref main`.
+  # El rol de OIDC solo confía en refs/heads/main, así que desde otra rama el job falla al asumirlo.
+  workflow_dispatch:
 
 permissions:
   contents: read
@@ -16,6 +19,7 @@ jobs:
     # Mientras la pila no esté desplegada AWS_ROLE_ARN no existe: el job se omite sin fallar.
     if: vars.AWS_ROLE_ARN != ''
     runs-on: ubuntu-latest
+    timeout-minutes: 20
     permissions:
       id-token: write
       contents: read
@@ -69,14 +73,25 @@ jobs:
           aws cloudfront publish-function --name "$CF_FUNCTION_NAME" --if-match "$NEW_ETAG" > /dev/null
           echo "CloudFront Function publicada."
 
-      - name: Actualizar la Lambda del formulario
+      - name: Actualizar la Lambda del formulario si cambió
         run: |
           set -euo pipefail
-          # Mismo contenido que CodeUri ../lambda/contact en la plantilla SAM.
-          zip -j "$RUNNER_TEMP/contact.zip" lambda/contact/*.mjs lambda/contact/package.json
+          # Mismo contenido que CodeUri ../lambda/contact en la plantilla SAM. Zip determinista
+          # (fechas fijas y sin atributos extra, -X) para que el mismo código dé el mismo hash.
+          FILES=(lambda/contact/*.mjs lambda/contact/package.json)
+          touch -d '2000-01-01 00:00:00 UTC' "${FILES[@]}"
+          TZ=UTC zip -q -X -j "$RUNNER_TEMP/contact.zip" "${FILES[@]}"
+          NEW=$(openssl dgst -sha256 -binary "$RUNNER_TEMP/contact.zip" | base64)
+          LIVE=$(aws lambda get-function-configuration --function-name "$CONTACT_FUNCTION_NAME" \
+            --query CodeSha256 --output text)
+          if [ "$NEW" = "$LIVE" ]; then
+            echo "La Lambda del formulario no ha cambiado."
+            exit 0
+          fi
           aws lambda update-function-code --function-name "$CONTACT_FUNCTION_NAME" \
             --zip-file "fileb://$RUNNER_TEMP/contact.zip" > /dev/null
           aws lambda wait function-updated --function-name "$CONTACT_FUNCTION_NAME"
+          echo "Lambda del formulario actualizada."
 
       - name: Invalidar CloudFront
         run: aws cloudfront create-invalidation --distribution-id "$CF_DISTRIBUTION_ID" --paths "/*" > /dev/null

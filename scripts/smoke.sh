@@ -5,6 +5,7 @@
 # Imprime "OK|FAIL <comprobacion>" por linea; sale con 0 si todo pasa, 1 si algo falla, 2 si el uso es incorrecto.
 # Cada comprobacion se reintenta SMOKE_RETRIES veces (defecto 5) esperando SMOKE_DELAY segundos
 # (defecto 10), porque la invalidacion de CloudFront tarda en propagarse.
+# Cada peticion se corta a los SMOKE_MAX_TIME segundos (defecto 20; conexion: 10) para no colgarse.
 # Las funciones attempt se invocan de forma indirecta a través de retry.
 # shellcheck disable=SC2329
 set -u
@@ -20,6 +21,7 @@ HOST_CHECK=0
 
 RETRIES=${SMOKE_RETRIES:-5}
 DELAY=${SMOKE_DELAY:-10}
+CURL_LIMITS=(--connect-timeout 10 --max-time "${SMOKE_MAX_TIME:-20}")
 TMP=$(mktemp -d)
 trap 'rm -rf "$TMP"' EXIT
 
@@ -41,7 +43,7 @@ retry() {
 
 # Deja en $TMP/code y $TMP/loc el estado y la ruta de destino (sin esquema ni host) de una peticion GET.
 fetch() { # fetch <url>
-  curl -sS -o /dev/null -w '%{http_code} %{redirect_url}' "$1" 2>/dev/null >"$TMP/out" || return 1
+  curl "${CURL_LIMITS[@]}" -sS -o /dev/null -w '%{http_code} %{redirect_url}' "$1" 2>/dev/null >"$TMP/out" || return 1
   read -r code loc <"$TMP/out"
   echo "$code" >"$TMP/code"
   echo "${loc:-}" >"$TMP/loc"
@@ -63,7 +65,7 @@ check_status() { # check_status <ruta> <estado> [<destino>]
 check_header() { # check_header <ruta> <cabecera>
   path=$1 name=$2
   attempt() {
-    curl -sS -D "$TMP/headers" -o /dev/null "$BASE$path" 2>/dev/null || return 1
+    curl "${CURL_LIMITS[@]}" -sS -D "$TMP/headers" -o /dev/null "$BASE$path" 2>/dev/null || return 1
     grep -qi "^$name:" "$TMP/headers"
   }
   retry attempt
@@ -73,7 +75,7 @@ check_header() { # check_header <ruta> <cabecera>
 
 check_contact() {
   attempt() {
-    code=$(curl -sS -o "$TMP/body" -w '%{http_code}' -X POST \
+    code=$(curl "${CURL_LIMITS[@]}" -sS -o "$TMP/body" -w '%{http_code}' -X POST \
       -H 'Accept: application/json' -H 'Content-Type: application/x-www-form-urlencoded' \
       --data '' "$BASE/api/contact" 2>/dev/null) || return 1
     [ "$code" = "400" ] && grep -qF '"error":"validation"' "$TMP/body"

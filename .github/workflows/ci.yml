@@ -24,3 +24,16 @@ jobs:
       - run: npm test
         env:
           PUBLIC_TURNSTILE_SITE_KEY: 1x00000000000000000000AA
+      # shellcheck viene instalado en ubuntu-latest.
+      - name: shellcheck
+        run: shellcheck scripts/*.sh scripts/dns/*.sh
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: cfn-lint
+        run: |
+          pip install cfn-lint aws-sam-translator
+          # La plantilla final lleva dentro la CloudFront Function generada por el build (npm test).
+          node infra/render.mjs
+          cfn-lint infra/build/template.yaml --regions eu-west-3
+          cfn-lint infra/cert.yaml --regions us-east-1

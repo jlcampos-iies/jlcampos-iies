@@ -184,7 +184,16 @@ gh variable set SITE_URL                  --repo $R --body "https://<Distributio
 gh variable set PUBLIC_TURNSTILE_SITE_KEY --repo $R --body "<clave de sitio del paso 9>"
 ```
 
-`SITE_URL` apunta a `https://<DistributionDomain>` hasta el corte, y a `https://jlc-ingenieros.com` después. El siguiente push a `main` publica la web en el bucket. El corte (`EnableAliases=true` y cambio del registro A del apex) está en `docs/runbook-corte.md`.
+`SITE_URL` apunta a `https://<DistributionDomain>` hasta el corte, y a `https://jlc-ingenieros.com` después.
+
+**Primera publicación:** el bucket está vacío hasta que se ejecuta el workflow de despliegue. No hace falta esperar a un push: lanzarlo a mano sobre `main` (desde otra rama el rol de OIDC no se puede asumir):
+
+```bash
+gh workflow run deploy.yml --repo $R --ref main
+gh run watch --repo $R   # elegir la ejecución de «Deploy» (puede tardar unos segundos en aparecer)
+```
+
+(o en GitHub → **Actions** → **Deploy** → **Run workflow**, rama `main`). A partir de ahí, cada push a `main` vuelve a publicar la web. El corte (`EnableAliases=true` y cambio del registro A del apex) está en `docs/runbook-corte.md`.
 
 ## Qué NO toca esta pila (requisito nº 1)
 

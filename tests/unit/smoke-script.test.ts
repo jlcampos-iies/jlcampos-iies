@@ -26,6 +26,9 @@ type Overrides = {
   noHeaders?: boolean;
   /** Ruta que falla las primeras N peticiones y luego responde bien (propagacion de la invalidacion). */
   flaky?: { path: string; failures: number };
+  /** Ruta (GET) o cabeceras/POST de contacto que nunca responden: curl tiene que cortar por --max-time. */
+  hangPath?: string;
+  hangContact?: boolean;
 };
 
 function fakeSite(o: Overrides = {}): Promise<Server> {
@@ -33,6 +36,7 @@ function fakeSite(o: Overrides = {}): Promise<Server> {
   const server = createServer((req, res) => {
     const url = (req.url ?? '/').split('?')[0];
     seen[url] = (seen[url] ?? 0) + 1;
+    if (url === o.hangPath || (o.hangContact && url === '/api/contact')) return; // no responde nunca
     if (req.method === 'POST' && url === '/api/contact') {
       res.writeHead(o.contactStatus ?? 400, { 'content-type': 'application/json' });
       res.end(o.contactBody ?? '{"ok":false,"error":"validation"}');
@@ -68,14 +72,14 @@ afterEach(() => {
   while (servers.length) servers.pop()!.close();
 });
 
-async function runSmoke(o: Overrides = {}, args: string[] = []) {
+async function runSmoke(o: Overrides = {}, args: string[] = [], env: Record<string, string> = {}) {
   const server = await fakeSite(o);
   servers.push(server);
   const base = `http://127.0.0.1:${(server.address() as AddressInfo).port}`;
   // spawn asincrono: con execFileSync el bucle de eventos se bloquearia y el servidor no responderia.
   return new Promise<{ code: number | null; out: string }>((resolve) => {
     const child = spawn('bash', ['scripts/smoke.sh', base, ...args], {
-      env: { ...process.env, SMOKE_RETRIES: '2', SMOKE_DELAY: '0' },
+      env: { ...process.env, SMOKE_RETRIES: '2', SMOKE_DELAY: '0', ...env },
     });
     let out = '';
     child.stdout.on('data', (d) => (out += d));
@@ -127,6 +131,18 @@ describe('scripts/smoke.sh', () => {
     expect(code).toBe(0);
     expect(out).toContain('OK GET /ca/ -> 200');
   });
+
+  it('corta las peticiones que no responden (--max-time) y marca FAIL sin colgarse', async () => {
+    const t0 = Date.now();
+    const { code, out } = await runSmoke({ hangPath: '/', hangContact: true }, [], { SMOKE_MAX_TIME: '1' });
+    expect(code).toBe(1);
+    expect(out).toContain('FAIL GET / -> 200');
+    expect(out).toContain('FAIL header strict-transport-security en /');
+    expect(out).toContain('FAIL POST /api/contact');
+    expect(out).toContain('OK GET /en/ -> 200');
+    // 2 intentos x (1 GET + 3 cabeceras + 1 POST) x ~1 s
+    expect(Date.now() - t0).toBeLessThan(15_000);
+  }, 30_000);
 
   it('rechaza una ejecucion sin URL base', async () => {
     const code = await new Promise((resolve) =>
