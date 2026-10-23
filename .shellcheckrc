@@ -1,0 +1,4 @@
+# SC2317 ("command appears to be unreachable"): shellcheck < 0.10 (el de
+# ubuntu-latest en GitHub Actions) lo marca en funciones que los scripts llaman
+# de forma indirecta (p. ej. `retry home_ok`). Versiones recientes ya no lo hacen.
+disable=SC2317
