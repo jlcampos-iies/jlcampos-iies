@@ -76,7 +76,7 @@ aws cloudformation deploy --template-file infra/cert.yaml \
 La orden se queda esperando hasta que el certificado esté validado. Mientras tanto, en la consola de **ACM (región us-east-1)** → el certificado → **"Crear registros en Route 53"**. Ese botón solo **añade** los CNAME de validación (nombres nuevos `_xxxx.jlc-ingenieros.com` y `_yyyy.www.jlc-ingenieros.com`); no modifica ningún registro existente. Cuando termine:
 
 ```bash
-scripts/check-isolation.sh
+scripts/check-isolation.sh --compare
 CERT_ARN=$(aws cloudformation describe-stacks --stack-name jlc-web-publica-cert --region us-east-1 \
   --query "Stacks[0].Outputs[?OutputKey=='CertificateArn'].OutputValue" --output text)
 echo "$CERT_ARN"
@@ -124,6 +124,8 @@ sam deploy --template-file infra/build/template.yaml --stack-name jlc-web-public
   aws cloudformation delete-stack --stack-name jlc-web-publica --region eu-west-3
   aws cloudformation wait stack-delete-complete --stack-name jlc-web-publica --region eu-west-3
   ```
+
+  El proveedor OIDC y la identidad SES tienen `DeletionPolicy: Retain`, así que pueden **sobrevivir** al borrado de la pila. Antes de reintentar, repetir los pasos 3 y 4: si la identidad SES ya existe, pasar `CreateSesIdentity=false`; si el proveedor OIDC ya existe, pasar su ARN en `ExistingGitHubOidcProviderArn`. Si no, el reintento falla porque el recurso ya existe.
 - `--resolve-s3` crea (una sola vez) la pila `aws-sam-cli-managed-default` con un bucket para el paquete de la Lambda. Es independiente de todo lo demás.
 
 Salidas de la pila (se usan en los pasos siguientes):
@@ -142,7 +144,7 @@ aws cloudformation describe-stacks --stack-name jlc-web-publica --region eu-west
 Consola de **SES (región París, eu-west-3)** → Identities → `jlc-ingenieros.com` → **"Publicar registros en Route 53"**. El botón solo **añade** los 3 CNAME `<token>._domainkey.jlc-ingenieros.com` de las salidas `DkimRecord*` (tokens nuevos, distintos de los `*._domainkey` existentes, que no se tocan). Después:
 
 ```bash
-scripts/check-isolation.sh
+scripts/check-isolation.sh --compare
 ```
 
 ### 8. Verificar el destinatario en SES
