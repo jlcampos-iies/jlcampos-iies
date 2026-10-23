@@ -235,7 +235,7 @@ La plantilla **no** crea ni modifica registros DNS. Los registros nuevos (valida
 8. Se asignan los alias `jlc-ingenieros.com` y `www` a la distribución con el certificado ACM.
 9. Un único lote de Route 53: `UPSERT` del A del apex (de `3.133.180.219` a ALIAS → CloudFront) y `CREATE` del AAAA ALIAS → CloudFront. `www` no cambia: su CNAME resuelve ya a CloudFront, que lo tiene como dominio alternativo, y la Function lo redirige al apex.
 10. `check-isolation.sh` y una batería de humo: home en los 3 idiomas, 6 proyectos, 301 de `/en/home/`, `/ca/inici/`, `www` y `/feed/`, 404 de `/wp-login.php`, formulario y cabeceras de seguridad.
-11. Search Console: envío del sitemap e inspección de las URLs principales. Se restaura el TTL a 300 s pasadas 48 h sin incidencias.
+11. Search Console: envío del sitemap e inspección de las URLs principales. No hay TTL que restaurar: tras el corte el apex es un ALIAS a CloudFront (sin TTL). El TTL 300 solo se restaura si el apex sigue o vuelve a apuntar a WordPress (corte aplazado o vuelta atrás).
 
 **Vuelta atrás:** un único lote: `UPSERT` del A del apex a `3.133.180.219` (TTL 60) y `DELETE` del AAAA ALIAS, con efecto en ≈ 1 min. WordPress sigue encendido hasta el paso 13.
 
