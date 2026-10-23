@@ -1,0 +1,23 @@
+---
+import Base from '../layouts/Base.astro';
+import { LANGS, pagePath } from '../i18n/routes';
+import { t } from '../i18n/ui';
+
+const title = t('es', 'notFound.title');
+---
+<Base lang="es" title={title} description={t('es', 'notFound.text')} path="/404.html" alternates={{}} noindex>
+  <div class="container page-content notfound">
+    {
+      LANGS.map((lang, i) => {
+        const Heading = i === 0 ? 'h1' : 'h2';
+        return (
+          <section lang={lang}>
+            <Heading>{t(lang, 'notFound.title')}</Heading>
+            <p>{t(lang, 'notFound.text')}</p>
+            <p><a class="btn" href={pagePath('home', lang)}>{t(lang, 'nav.home')}</a></p>
+          </section>
+        );
+      })
+    }
+  </div>
+</Base>

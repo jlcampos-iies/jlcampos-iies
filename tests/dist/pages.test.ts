@@ -103,9 +103,11 @@ describe('sitemap.xml y robots.txt', () => {
     expect(xml).toContain(
       '<xhtml:link rel="alternate" hreflang="x-default" href="https://jlc-ingenieros.com/estudio/"/>',
     );
-    expect(xml).toContain(
-      '<xhtml:link rel="alternate" hreflang="ca" href="https://jlc-ingenieros.com/ca/estudi/"/>',
-    );
+    for (const [lang, path] of Object.entries(routes.find((r) => r.key === 'studio')!.alternates)) {
+      expect(xml).toContain(
+        `<xhtml:link rel="alternate" hreflang="${lang}" href="https://jlc-ingenieros.com${path}"/>`,
+      );
+    }
     expect((xml.match(/<url>/g) ?? []).length).toBe(indexable.length);
   });
 
