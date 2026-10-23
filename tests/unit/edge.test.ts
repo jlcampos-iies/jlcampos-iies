@@ -85,6 +85,26 @@ describe('CloudFront Function viewer-request', () => {
     }
   });
 
+  it.each(['/sitemap_index.xml', '/page-sitemap.xml', '/portfolio-sitemap.xml'])(
+    'sitemap antiguo de Rank Math %s -> /sitemap.xml',
+    (u) => {
+      const r = handler(ev(u));
+      expect(r.statusCode).toBe(301);
+      expect(loc(r)).toBe('/sitemap.xml');
+    },
+  );
+
+  it.each([
+    '/wp-content/uploads/constructor/name',
+    '/wp-content/uploads/constructor/x.jpg',
+    '/wp-content/uploads/__proto__/toString',
+    '/wp-content/uploads/2024/03/hasOwnProperty',
+  ])('uploads: %s no se confunde con propiedades heredadas y pasa sin cambios', (u) => {
+    const r = handler(ev(u));
+    expect(r.statusCode).toBeUndefined();
+    expect(r.uri).toBe(u);
+  });
+
   it('serializa valores vacios y multiValue de 2 valores', () => {
     expect(loc(handler(ev('/feed/', { qs: { a: { value: '' } } })))).toBe('/?a=');
     const qs = { t: { value: 'x', multiValue: [{ value: 'x' }, { value: 'y' }] }, b: { value: '2' } };

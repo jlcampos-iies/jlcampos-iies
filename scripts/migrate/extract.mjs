@@ -332,6 +332,10 @@ Object.assign(redirects, {
   '/en/comments/feed/': '/en/',
   '/ca/feed/': '/ca/',
   '/ca/comments/feed/': '/ca/',
+  // Sitemaps antiguos de Rank Math (siguen registrados en buscadores).
+  '/sitemap_index.xml': '/sitemap.xml',
+  '/page-sitemap.xml': '/sitemap.xml',
+  '/portfolio-sitemap.xml': '/sitemap.xml',
 });
 const sorted = Object.fromEntries(Object.entries(redirects).sort(([a], [b]) => a.localeCompare(b)));
 fs.writeFileSync(OUT.redirects, JSON.stringify(sorted, null, 2) + '\n');

@@ -81,8 +81,10 @@ function handler(event) {
   var UP = '/wp-content/uploads/';
   if (uri.indexOf(UP) === 0) {
     var cut = uri.lastIndexOf('/');
-    var dir = UPLOADS[uri.slice(UP.length, cut)];
+    var d = uri.slice(UP.length, cut);
     var file = uri.slice(cut + 1);
+    // hasOwnProperty en los dos niveles: /constructor/, /__proto__/... no son entradas del mapa.
+    var dir = Object.prototype.hasOwnProperty.call(UPLOADS, d) ? UPLOADS[d] : null;
     if (dir && Object.prototype.hasOwnProperty.call(dir, file)) {
       return redirect('/img/' + (dir[file] === 1 ? file : dir[file]) + qsString(qs, false));
     }
