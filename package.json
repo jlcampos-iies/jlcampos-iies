@@ -4,7 +4,7 @@
   "type": "module",
   "version": "0.0.1",
   "engines": {
-    "node": ">=22"
+    "node": ">=22.22"
   },
   "scripts": {
     "build": "astro check && astro build && node edge/build.mjs",
