@@ -28,7 +28,12 @@ const {
   jsonLd = [],
 } = Astro.props;
 
-const fullTitle = title.includes(site.name) ? title : `${title} | ${site.name}`;
+// <title> de como mucho 70 caracteres: sin sufijo si no cabe, y recortado en palabra si aun así excede.
+const TITLE_MAX = 70;
+const withSuffix = title.includes(site.name) ? title : `${title} | ${site.name}`;
+const fitted = withSuffix.length <= TITLE_MAX ? withSuffix : title;
+const fullTitle =
+  fitted.length <= TITLE_MAX ? fitted : `${fitted.slice(0, TITLE_MAX - 1).replace(/\s+\S*$/, '')}…`;
 const canonical = absoluteUrl(path);
 const image = absoluteUrl(ogImage);
 // Las páginas noindex no declaran hreflang.
