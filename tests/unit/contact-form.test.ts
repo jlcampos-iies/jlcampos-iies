@@ -18,7 +18,7 @@ function mountForm(lang: 'es' | 'en' | 'ca' = 'ca') {
       <textarea name="message">Mensaje de prueba largo</textarea>
       <input type="hidden" name="lang" value="${lang}" />
       <input type="hidden" name="cf-turnstile-response" value="tok" />
-      <button type="submit">Enviar</button>
+      <button type="submit" data-sending="Enviando">Enviar</button>
       ${alerts}
     </form>`;
   return document.querySelector('form')!;
@@ -69,6 +69,12 @@ describe('submitContact', () => {
     ).toBe('network');
   });
 
+  it('fetch que nunca responde -> network tras el timeout', async () => {
+    const hang = (_u: string, init: RequestInit) =>
+      new Promise<Response>((_res, rej) => init.signal!.addEventListener('abort', () => rej(init.signal!.reason)));
+    expect(await submitContact(form, hang as unknown as typeof fetch, 20)).toBe('network');
+  });
+
   it('fetch rechazado -> network', async () => {
     const fetchImpl = async () => {
       throw new TypeError('fail');
@@ -94,6 +100,8 @@ describe('initContactForm', () => {
     const button = form.querySelector('button')!;
     form.dispatchEvent(new Event('submit', { cancelable: true, bubbles: true }));
     expect(button.disabled).toBe(true);
+    expect(button.textContent).toBe('Enviando');
+    expect(button.getAttribute('aria-busy')).toBe('true');
     await done.settled();
     expect(button.disabled).toBe(false);
     const shown = visible();
@@ -101,7 +109,9 @@ describe('initContactForm', () => {
     expect(shown[0].id).toBe(`form-error-${code}`);
     expect(shown[0].textContent).toBe(t(document.documentElement.lang as 'es', `error.${code}` as UiKey));
     expect(document.activeElement).toBe(shown[0]);
-    expect(reset).toHaveBeenCalledTimes(code === 'captcha' ? 1 : 0);
+    expect(reset).toHaveBeenCalledTimes(1);
+    expect(button.textContent).toBe('Enviar');
+    expect(button.hasAttribute('aria-busy')).toBe(false);
   });
 
   it('ok: navega a data-thanks y no muestra errores', async () => {
@@ -124,5 +134,38 @@ describe('initContactForm', () => {
       await done.settled();
     }
     expect(visible().map((e) => e.id)).toEqual(['form-error-send']);
+  });
+});
+
+describe('estado visible y bfcache', () => {
+  it('solo queda visible el nuevo error aunque otro estuviera marcado', async () => {
+    const form = mountForm('es');
+    form.querySelector('#form-error-captcha')!.classList.add('is-visible');
+    const done = initContactForm(form, (async () => json(502, { error: 'send' })) as unknown as typeof fetch);
+    form.dispatchEvent(new Event('submit', { cancelable: true, bubbles: true }));
+    await done.settled();
+    const vis = (id: string) => form.querySelector(`#form-error-${id}`)!.classList;
+    expect(vis('send').contains('is-visible')).toBe(true);
+    expect(vis('send').contains('is-hidden')).toBe(false);
+    for (const c of ['captcha', 'validation', 'network']) {
+      expect(vis(c).contains('is-visible')).toBe(false);
+      expect(vis(c).contains('is-hidden')).toBe(true);
+    }
+  });
+
+  it('pageshow persistente reactiva el botón y reinicia Turnstile', () => {
+    const form = mountForm('es');
+    const reset = vi.fn();
+    (window as unknown as { turnstile: { reset: () => void } }).turnstile = { reset };
+    initContactForm(form, (async () => json(200, { ok: true })) as unknown as typeof fetch, vi.fn());
+    const button = form.querySelector('button')!;
+    button.disabled = true;
+    button.textContent = 'Enviando';
+    const ev = new Event('pageshow') as Event & { persisted: boolean };
+    ev.persisted = true;
+    window.dispatchEvent(ev);
+    expect(button.disabled).toBe(false);
+    expect(button.textContent).toBe('Enviar');
+    expect(reset).toHaveBeenCalled(); // (los initContactForm de tests previos también escuchan)
   });
 });

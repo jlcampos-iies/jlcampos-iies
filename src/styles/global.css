@@ -459,6 +459,17 @@ img {
 .form-error.is-visible {
   display: block;
 }
+.form-error.is-hidden {
+  display: none;
+}
+.visually-hidden {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+  clip-path: inset(50%);
+  white-space: nowrap;
+}
 .contact-form button[disabled] {
   opacity: 0.6;
   cursor: progress;

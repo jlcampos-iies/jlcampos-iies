@@ -40,7 +40,7 @@ const codes = ['validation', 'captcha', 'send', 'network'] as const;
       name="phone"
       type="tel"
       maxlength="30"
-      pattern="[0-9 +()\-]*"
+      pattern="[0-9 +\(\)\-]*"
       autocomplete="tel"
     />
   </div>
@@ -63,7 +63,9 @@ const codes = ['validation', 'captcha', 'send', 'network'] as const;
   <div class="field field--check">
     <label>
       <input type="checkbox" name="privacy" value="on" required />
-      <a href={pagePath('privacy', lang)} target="_blank" rel="noopener">{t(lang, 'form.privacy')}</a>
+      <span>
+        {t(lang, 'form.privacyBefore')}<a href={pagePath('privacy', lang)} target="_blank" rel="noopener">{t(lang, 'form.privacyLink')}<span class="visually-hidden"> {t(lang, 'form.newTab')}</span></a>
+      </span>
     </label>
   </div>
   <div class="cf-turnstile" data-sitekey={siteKey} data-language={lang}></div>

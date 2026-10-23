@@ -3,6 +3,7 @@ import { join } from 'node:path';
 import { describe, expect, it } from 'vitest';
 import { distFiles, readPage } from './helpers';
 import { pagePath, type Lang } from '../../src/i18n/routes';
+import { t } from '../../src/i18n/ui';
 
 const LANGS: Lang[] = ['es', 'en', 'ca'];
 const TURNSTILE = 'https://challenges.cloudflare.com/turnstile/v0/api.js';
@@ -25,7 +26,7 @@ describe.each(LANGS)('formulario de contacto (%s)', (lang) => {
     expect(f('email').getAttribute('type')).toBe('email');
     expect(f('email').getAttribute('maxlength')).toBe('254');
     expect(f('phone').getAttribute('maxlength')).toBe('30');
-    expect(f('phone').getAttribute('pattern')).toBe('[0-9 +()\\-]*');
+    expect(f('phone').getAttribute('pattern')).toBe('[0-9 +\\(\\)\\-]*');
     expect(f('message').getAttribute('minlength')).toBe('10');
     expect(f('message').getAttribute('maxlength')).toBe('5000');
     for (const n of ['name', 'email', 'message', 'phone']) {
@@ -50,6 +51,9 @@ describe.each(LANGS)('formulario de contacto (%s)', (lang) => {
     expect(cb.getAttribute('value')).toBe('on');
     const link = cb.closest('label')!.querySelector('a')!;
     expect(link.getAttribute('href')).toBe(pagePath('privacy', lang));
+    expect(link.text).toContain(t(lang, 'form.privacyLink'));
+    expect(link.text).toContain(t(lang, 'form.newTab'));
+    expect(cb.closest('label')!.text).toContain(t(lang, 'form.privacyBefore').trim());
   });
 
   it('widget Turnstile dentro del formulario y script solo en esta página', () => {
@@ -65,6 +69,7 @@ describe.each(LANGS)('formulario de contacto (%s)', (lang) => {
     expect(el.getAttribute('role')).toBe('alert');
     expect(el.getAttribute('class')).toContain('form-error');
     expect(el.hasAttribute('style')).toBe(false);
+    expect(el.text.trim()).toBe(t(lang, `error.${code}` as 'error.send'));
   });
 });
 
