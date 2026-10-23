@@ -1,0 +1,7 @@
+{
+  "name": "jlc-web-contact",
+  "private": true,
+  "version": "0.0.1",
+  "type": "module",
+  "main": "index.mjs"
+}
