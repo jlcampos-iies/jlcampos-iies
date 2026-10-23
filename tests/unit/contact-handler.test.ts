@@ -19,7 +19,8 @@ const valid = {
 
 function setup(over: { turnstile?: boolean; sendFails?: boolean } = {}) {
   const sendEmail = vi.fn(async (_m: unknown) => {
-    if (over.sendFails) throw new Error('SES down');
+    // Como SES: la clase en name y datos del envío en el mensaje (que nunca debe llegar al log).
+    if (over.sendFails) throw Object.assign(new Error('SES down for maria@example.com'), { name: 'MessageRejected' });
   });
   const fetchImpl = vi.fn(async () => ({ json: async () => ({ success: over.turnstile ?? true }) }) as Response);
   const getTurnstileSecret = vi.fn(async () => 'ts-secret');
@@ -256,12 +257,27 @@ describe('flujo', () => {
   });
   it('fallo al leer el secreto se registra como "secret" y el cliente ve send', async () => {
     const { handler, getTurnstileSecret } = setup();
-    getTurnstileSecret.mockRejectedValueOnce(new Error('ssm-detail'));
+    getTurnstileSecret.mockRejectedValueOnce(Object.assign(new Error('ssm-detail'), { name: 'ParameterNotFound' }));
     const r = await handler(ev(valid, { accept: JSON_ACCEPT }));
     expect(JSON.parse(r.body!).error).toBe('send');
-    const dump = JSON.stringify(logSpies.flatMap((s) => s.mock.calls));
-    expect(dump).toContain('result\\":\\"secret');
-    expect(dump).not.toContain('ssm-detail');
+    const lines = logSpies.flatMap((s) => s.mock.calls).map((c) => JSON.parse(String(c[0])));
+    expect(lines).toContainEqual({ result: 'secret', error: 'ParameterNotFound' });
+    expect(JSON.stringify(lines)).not.toContain('ssm-detail');
+  });
+  it('un name de error que no parece un nombre de clase no se registra tal cual', async () => {
+    const { handler, getTurnstileSecret } = setup();
+    getTurnstileSecret.mockRejectedValueOnce(Object.assign(new Error('x'), { name: 'fallo de maria@example.com' }));
+    await handler(ev(valid, { accept: JSON_ACCEPT }));
+    const lines = logSpies.flatMap((s) => s.mock.calls).map((c) => JSON.parse(String(c[0])));
+    expect(lines).toContainEqual({ result: 'secret', error: 'unknown' });
+    expect(JSON.stringify(lines)).not.toContain('maria');
+  });
+  it('se lanza algo que no es un Error -> error unknown', async () => {
+    const { handler, getTurnstileSecret } = setup();
+    getTurnstileSecret.mockRejectedValueOnce('texto suelto');
+    await handler(ev(valid, { accept: JSON_ACCEPT }));
+    const lines = logSpies.flatMap((s) => s.mock.calls).map((c) => JSON.parse(String(c[0])));
+    expect(lines).toContainEqual({ result: 'secret', error: 'unknown' });
   });
   it('email con parte local no ASCII -> 400 validation (no 502)', async () => {
     const { handler, sendEmail } = setup();
@@ -333,6 +349,9 @@ describe('logs sin datos personales', () => {
     expect(results).toEqual(
       expect.arrayContaining(['ok', 'captcha', 'send', 'validation', 'honeypot', 'forbidden', 'method']),
     );
+    // El fallo de SES deja la clase del error (nunca su mensaje) junto al resultado.
+    expect(calls.map((c) => String(c[0]))).toContain(JSON.stringify({ result: 'send', error: 'MessageRejected' }));
+    expect(dump).not.toContain('SES down');
   });
 });
 

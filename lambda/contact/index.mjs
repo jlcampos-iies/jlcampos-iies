@@ -7,7 +7,13 @@ import { buildEmail } from './mail.mjs';
 const MAX_BODY = 16 * 1024;
 const DEFAULT_SECRET_PARAM = '/jlc-web-publica/turnstile-secret';
 
-const log = (result) => console.log(JSON.stringify({ result }));
+// Solo el resultado y, en los fallos de SES/SSM, la clase del error (nunca su mensaje: puede
+// llevar direcciones u otros datos del envío). Un name con otra forma se registra como 'unknown'.
+const log = (result, error) => console.log(JSON.stringify(error === undefined ? { result } : { result, error }));
+const errorName = (e) => {
+  const n = e?.name;
+  return typeof n === 'string' && /^[A-Za-z][A-Za-z0-9_.]{0,63}$/.test(n) ? n : 'unknown';
+};
 
 function safeEqual(a, b) {
   const x = Buffer.from(String(a ?? ''));
@@ -60,8 +66,8 @@ export function makeHandler({ sendEmail, getTurnstileSecret, fetchImpl = fetch, 
     const headers = event.headers ?? {};
     const json = String(headers.accept ?? '').toLowerCase().includes('application/json');
 
-    const respond = (result, lang) => {
-      log(result);
+    const respond = (result, lang, error) => {
+      log(result, error);
       const ok = result === 'ok' || result === 'honeypot';
       // 'secret' solo se distingue en los logs; el visitante ve 'send'.
       const code = result === 'secret' ? 'send' : result;
@@ -103,8 +109,8 @@ export function makeHandler({ sendEmail, getTurnstileSecret, fetchImpl = fetch, 
     let secret;
     try {
       secret = await getTurnstileSecret();
-    } catch {
-      return respond('secret', lang);
+    } catch (e) {
+      return respond('secret', lang, errorName(e));
     }
     const hostnames = (env.TURNSTILE_HOSTNAMES ?? '')
       .split(',')
@@ -118,8 +124,8 @@ export function makeHandler({ sendEmail, getTurnstileSecret, fetchImpl = fetch, 
 
     try {
       await sendEmail({ to: env.TO, from: env.FROM, ...buildEmail(v.data, new Date()) });
-    } catch {
-      return respond('send', lang);
+    } catch (e) {
+      return respond('send', lang, errorName(e));
     }
     return respond('ok', lang);
   };
