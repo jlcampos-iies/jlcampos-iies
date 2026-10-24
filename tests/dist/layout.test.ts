@@ -62,6 +62,25 @@ describe('layout de /estudio/', () => {
   });
 });
 
+describe('tipografías autoalojadas', () => {
+  const css = () => {
+    const link = readPage('/estudio/').querySelector('link[rel=stylesheet]')!.getAttribute('href')!;
+    return readFileSync(join(process.cwd(), 'dist', link), 'utf8');
+  };
+
+  it('el CSS referencia Roboto e Inter desde /_astro/ y nada externo', () => {
+    const c = css();
+    expect(c).toMatch(/font-family:\s*Roboto/i);
+    expect(c).toMatch(/font-family:\s*Inter/i);
+    expect(c).toMatch(/url\(\/_astro\/roboto-latin-400-normal[^)]*\.woff2\)/);
+    expect(c).toMatch(/url\(\/_astro\/roboto-latin-500-normal[^)]*\.woff2\)/);
+    expect(c).toMatch(/url\(\/_astro\/inter-latin-600-normal[^)]*\.woff2\)/);
+    expect(c).not.toMatch(/open sans/i);
+    expect(c).not.toContain('fonts.googleapis.com');
+    expect(c).not.toMatch(/url\(\s*["']?https?:/);
+  });
+});
+
 describe('menú móvil sin JS', () => {
   const css = () => {
     const link = readPage('/estudio/').querySelector('link[rel=stylesheet]')!.getAttribute('href')!;

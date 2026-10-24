@@ -29,7 +29,8 @@ const current = (key: PageKey) => {
 <header class="site-header">
   <div class="container site-header__bar">
     <a class="site-header__logo" href={pagePath('home', lang)} aria-label={site.name}>
-      <Image src={logo} alt={site.name} width={52} height={48} loading="eager" />
+      <Image src={logo} alt="" width={52} height={48} loading="eager" />
+      <span class="site-header__wordmark">{site.name}</span>
     </a>
     <button
       type="button"

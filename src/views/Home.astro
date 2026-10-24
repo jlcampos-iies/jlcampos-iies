@@ -11,25 +11,25 @@ const { entry } = Astro.props;
 const { title, description, hero, heroAlt, services = [], lang } = entry.data;
 ---
 <section class="hero">
+  {
+    hero && heroAlt && (
+      <Picture
+        class="hero__img"
+        src={hero}
+        formats={['avif', 'webp']}
+        widths={[800, 1200, 1600]}
+        sizes="100vw"
+        alt={heroAlt}
+        loading="eager"
+      />
+    )
+  }
   <div class="container hero__inner">
     <div class="hero__text">
       <h1>{title}</h1>
       <p class="lead">{description}</p>
       <a class="btn" href={pagePath('projects', lang)}>{t(lang, 'cta.viewProjects')}</a>
     </div>
-    {
-      hero && heroAlt && (
-        <Picture
-          class="hero__img"
-          src={hero}
-          formats={['avif', 'webp']}
-          widths={[400, 800, 1200]}
-          sizes="(min-width: 768px) 50vw, 100vw"
-          alt={heroAlt}
-          loading="eager"
-        />
-      )
-    }
   </div>
 </section>
 <section class="container page-content">
