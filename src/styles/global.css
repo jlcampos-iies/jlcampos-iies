@@ -355,8 +355,7 @@ img {
 .services,
 .cards,
 .gallery,
-.books,
-.client-list {
+.books {
   margin: 0;
   padding: 0;
   list-style: none;
@@ -422,19 +421,36 @@ img {
   margin-bottom: 1.5rem;
 }
 
-.client-list {
+.client-grid {
   display: grid;
-  gap: 0.5rem 1.5rem;
-  margin-top: 1.5rem;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 1rem;
+  margin: 1.5rem 0 0;
+  padding: 0;
+  list-style: none;
 }
-.client-list li {
-  padding: 0.75rem 1rem;
-  font-weight: 500;
-  color: var(--text);
+.client-card {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 1rem 0.75rem;
+  text-align: center;
   background: var(--bg);
-  border-left: 4px solid var(--slate);
-  border-radius: var(--radius);
+  border-radius: var(--radius-card);
   box-shadow: var(--shadow-card);
+}
+.client-card__logo {
+  display: block;
+  width: auto;
+  max-width: 100%;
+  height: 80px;
+  object-fit: contain;
+}
+.client-card__name {
+  font-size: 0.85rem;
+  line-height: 1.3;
+  color: var(--muted);
 }
 
 .books {
@@ -567,9 +583,6 @@ img {
   .gallery {
     grid-template-columns: repeat(3, 1fr);
   }
-  .client-list {
-    grid-template-columns: repeat(2, 1fr);
-  }
   .book {
     grid-template-columns: 10rem 1fr;
     gap: 1.5rem;
@@ -583,6 +596,17 @@ img {
 }
 @media (min-width: 1024px) {
   .services {
+    grid-template-columns: repeat(4, 1fr);
+  }
+}
+
+@media (min-width: 600px) {
+  .client-grid {
+    grid-template-columns: repeat(3, 1fr);
+  }
+}
+@media (min-width: 960px) {
+  .client-grid {
     grid-template-columns: repeat(4, 1fr);
   }
 }

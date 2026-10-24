@@ -1,17 +1,36 @@
 ---
+import { Picture } from 'astro:assets';
 import { getCollection, render, type CollectionEntry } from 'astro:content';
 
 interface Props {
   entry: CollectionEntry<'pages'>;
 }
 const { entry } = Astro.props;
-const clients = await getCollection('clients');
+const clients = (await getCollection('clients')).sort((a, b) => a.data.order - b.data.order);
 const { Content } = await render(entry);
 ---
 <div class="container page-content prose">
   <h1>{entry.data.title}</h1>
   <Content />
-  <ul class="client-list">
-    {clients.map((c) => <li>{c.data.name}</li>)}
+  <ul class="client-grid">
+    {
+      clients.map((c) => (
+        <li class="client-card">
+          <Picture
+            src={c.data.logo}
+            formats={['webp']}
+            fallbackFormat="jpg"
+            widths={[144, 288, 432]}
+            sizes="144px"
+            width={144}
+            height={80}
+            alt={c.data.name}
+            loading="lazy"
+            class="client-card__logo"
+          />
+          <span class="client-card__name">{c.data.name}</span>
+        </li>
+      ))
+    }
   </ul>
 </div>

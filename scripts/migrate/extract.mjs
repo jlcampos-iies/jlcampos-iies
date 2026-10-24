@@ -223,7 +223,7 @@ for (const { key } of PAGES) {
   const bgs = bgImages(mc);
   if (bgs.length && key !== 'cookies' && key !== 'terms') fm.hero = relFromContent(registerImage(bgs[0], 'pages'));
   // Los demás fondos (banners secundarios y logos de clientes) solo se conservan para las redirecciones.
-  bgs.slice(1).forEach((u) => registerImage(u, key === 'clients' ? 'clients' : 'pages'));
+  const otherBgs = bgs.slice(1).map((u) => registerImage(u, key === 'clients' ? 'clients' : 'pages'));
 
   if (key === 'home') {
     fm.title = 'Soluciones integrales en ingeniería';
@@ -234,7 +234,8 @@ for (const { key } of PAGES) {
   } else if (key === 'clients') {
     const names = mc.querySelectorAll('p').map((n) => clean(n.text)).filter(Boolean);
     if (names.length !== 12) throw new Error(`Se esperaban 12 clientes, hay ${names.length}`);
-    fs.writeFileSync(OUT.clients, names.map((n) => `- name: ${q(n)}\n`).join(''));
+    if (otherBgs.length !== names.length) throw new Error(`Logos de clientes (${otherBgs.length}) y nombres (${names.length}) no cuadran`);
+    fs.writeFileSync(OUT.clients, names.map((n, i) => `- name: ${q(n)}\n  logo: ${q(`../assets/images/${otherBgs[i]}`)}\n`).join(''));
   } else if (key === 'projects') {
     // Sin texto: solo el listado (se genera desde la colección projects).
   } else if (key === 'publications') {

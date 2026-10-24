@@ -65,11 +65,12 @@ const publications = defineCollection({
 });
 
 const clients = defineCollection({
-  // clients.yaml es una lista de { name }; el id de la entrada es el propio nombre.
+  // clients.yaml es una lista de { name, logo }; el id es el nombre y order la posición en el YAML
+  // (getCollection no conserva el orden del fichero).
   loader: file('src/content/clients.yaml', {
-    parser: (text) => (parse(text) as { name: string }[]).map((c) => ({ id: c.name, ...c })),
+    parser: (text) => (parse(text) as { name: string }[]).map((c, order) => ({ id: c.name, order, ...c })),
   }),
-  schema: z.object({ name: z.string() }),
+  schema: ({ image }) => z.object({ name: z.string(), logo: image(), order: z.number() }),
 });
 
 export const collections = { pages, projects, publications, clients };
