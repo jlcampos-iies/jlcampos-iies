@@ -71,8 +71,8 @@ describe('allRoutes', () => {
 });
 
 describe('colecciones de datos', () => {
-  it('clients tiene 12 entradas', async () => {
-    expect(await getCollection('clients')).toHaveLength(12);
+  it('clients tiene 14 entradas', async () => {
+    expect(await getCollection('clients')).toHaveLength(14);
   });
 
   it('publications tiene enlaces de Amazon limpios', async () => {

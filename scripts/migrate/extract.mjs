@@ -235,7 +235,17 @@ for (const { key } of PAGES) {
     const names = mc.querySelectorAll('p').map((n) => clean(n.text)).filter(Boolean);
     if (names.length !== 12) throw new Error(`Se esperaban 12 clientes, hay ${names.length}`);
     if (otherBgs.length !== names.length) throw new Error(`Logos de clientes (${otherBgs.length}) y nombres (${names.length}) no cuadran`);
-    fs.writeFileSync(OUT.clients, names.map((n, i) => `- name: ${q(n)}\n  logo: ${q(`../assets/images/${otherBgs[i]}`)}\n`).join(''));
+    // Clientes añadidos a mano (no estaban en WordPress): [nombre, logo, insertar tras este nombre o null = al final]
+    const extra = [
+      ['Ministerio de Cultura', 'clients/ministerio-cultura.png', 'Ajuntament de Sant Antoni de Portmany'],
+      ['Paraíso de los Pinos', 'clients/paraiso-de-los-pinos.png', null],
+    ];
+    const list = names.map((n, i) => [n, otherBgs[i]]);
+    for (const [n, logo, after] of extra) {
+      const at = after ? list.findIndex(([m]) => m === after) + 1 : list.length;
+      list.splice(at || list.length, 0, [n, logo]);
+    }
+    fs.writeFileSync(OUT.clients, list.map(([n, logo]) => `- name: ${q(n)}\n  logo: ${q(`../assets/images/${logo}`)}\n`).join(''));
   } else if (key === 'projects') {
     // Sin texto: solo el listado (se genera desde la colección projects).
   } else if (key === 'publications') {

@@ -97,9 +97,9 @@ describe('vistas en castellano', () => {
 
 describe('cuadrícula de clientes', () => {
   const clients = parse(readFileSync(join(process.cwd(), 'src/content/clients.yaml'), 'utf8')) as { name: string }[];
-  it.each(['/clientes/', '/en/clients/', '/ca/clients/'])('%s: 12 logos con alt = nombre dentro de la cuadrícula', (path) => {
+  it.each(['/clientes/', '/en/clients/', '/ca/clients/'])('%s: 14 logos con alt = nombre dentro de la cuadrícula', (path) => {
     const imgs = readPage(path).querySelectorAll('main ul.client-grid li img');
-    expect(imgs).toHaveLength(12);
+    expect(imgs).toHaveLength(14);
     expect(imgs.map((i) => i.getAttribute('alt'))).toEqual(clients.map((c) => c.name));
     for (const img of imgs) {
       expect(img.getAttribute('alt')!.trim()).not.toBe('');
