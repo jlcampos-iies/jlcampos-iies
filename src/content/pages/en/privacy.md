@@ -13,7 +13,7 @@ This policy explains how the personal data you provide through this website are 
 
 - **Controller:** José Luis Campos Giménez (JLC Ingenieros)
 - **Tax ID (NIF):** 20151498W
-- **Address:** C/. Carlos III, 28 Bajo, 07800 Eivissa (Illes Balears), Spain
+- **Address:** C/. Marià Tur Tur, 14, 07800 Eivissa (Illes Balears), Spain
 - **Telephone:** (+34) 616 992 440
 - **Data protection contact:** [info@jlc-ingenieros.com](mailto:info@jlc-ingenieros.com)
 

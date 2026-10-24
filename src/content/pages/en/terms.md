@@ -76,4 +76,4 @@ These terms and conditions are governed by Spanish law. Unless the applicable le
 
 ## 14. Contact
 
-For any questions about these terms and conditions, please write to [jlcampos@jlc-ingenieros.com](mailto:jlcampos@jlc-ingenieros.com) or by post to C/. Carlos III, 28 Bajo, 07800 Eivissa (Illes Balears), Spain.
+For any questions about these terms and conditions, please write to [jlcampos@jlc-ingenieros.com](mailto:jlcampos@jlc-ingenieros.com) or by post to C/. Marià Tur Tur, 14, 07800 Eivissa (Illes Balears), Spain.

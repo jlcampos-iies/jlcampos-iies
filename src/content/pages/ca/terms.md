@@ -76,4 +76,4 @@ Aquests termes i condicions es regeixen per la legislació espanyola. Per a qual
 
 ## 14. Contacte
 
-Per a qualsevol qüestió sobre aquests termes i condicions, podeu escriure a [jlcampos@jlc-ingenieros.com](mailto:jlcampos@jlc-ingenieros.com) o adreçar-vos per correu postal a C/. Carlos III, 28 Bajo, 07800 Eivissa (Illes Balears).
+Per a qualsevol qüestió sobre aquests termes i condicions, podeu escriure a [jlcampos@jlc-ingenieros.com](mailto:jlcampos@jlc-ingenieros.com) o adreçar-vos per correu postal a C/. Marià Tur Tur, 14, 07800 Eivissa (Illes Balears).

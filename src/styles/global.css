@@ -302,8 +302,7 @@ img {
 .split__img,
 .card img,
 .gallery img,
-.project__cover,
-.map img {
+.project__cover {
   display: block;
   border-radius: var(--radius);
 }
@@ -465,22 +464,6 @@ img {
 .split__img {
   width: 100%;
   height: auto;
-}
-.map {
-  margin: 0;
-}
-.map img {
-  width: 100%;
-  height: auto;
-  border: 1px solid var(--border);
-}
-.map figcaption {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 0 0.75rem;
-  margin-top: 0.5rem;
-  font-size: 0.875rem;
-  color: var(--muted);
 }
 
 /* Formulario de contacto */

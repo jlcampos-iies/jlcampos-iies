@@ -52,18 +52,33 @@ describe('vistas en castellano', () => {
     expect(links).toHaveLength(7);
   });
 
-  it('/contacto/ tiene dirección, mapa, atribución y formulario', () => {
-    const page = readPage('/contacto/');
-    const main = page.querySelector('main')!;
-    expect(main.text).toContain('C/. Carlos III, 28 Bajo');
-    expect(main.text).toContain('© OpenStreetMap');
-    expect(
-      main.querySelector(
-        'a[href="https://www.google.com/maps/search/?api=1&query=C.+Carlos+III+28+07800+Eivissa"]',
-      ),
-    ).not.toBeNull();
-    expect(main.querySelector('form[data-contact-form]')).not.toBeNull();
-    expect(page.querySelector('iframe')).toBeNull();
+  it.each(['/contacto/', '/en/contact/', '/ca/contacte/'])(
+    '%s: sin mapa ni enlaces a mapas; con correo, teléfono y formulario',
+    (path) => {
+      const page = readPage(path);
+      const main = page.querySelector('main')!;
+      expect(main.querySelector('.map, figure')).toBeNull();
+      expect(main.querySelector('img[src*="mapa-contacto"]')).toBeNull();
+      expect(main.text).not.toMatch(/Tur Tur|Carlos\b/);
+      const hrefs = main.querySelectorAll('a').map((a) => a.getAttribute('href') ?? '');
+      expect(hrefs.filter((h) => /google\.[a-z.]+\/maps|openstreetmap|maps\.app/.test(h))).toEqual([]);
+      expect(hrefs).toContain('mailto:jlcampos@jlc-ingenieros.com');
+      expect(hrefs).toContain('tel:+34616992440');
+      expect(main.querySelector('form[data-contact-form]')).not.toBeNull();
+      expect(page.querySelector('iframe')).toBeNull();
+    },
+  );
+
+  it.each([
+    ['/', '/aviso-legal/'],
+    ['/en/', '/en/legal-notice/'],
+    ['/ca/', '/ca/avis-legal/'],
+  ])('%s: domicilio fiscal nuevo en el pie y en %s, y copyright con la marca', (home, legal) => {
+    const footer = readPage(home).querySelector('footer')!.text;
+    expect(footer).toContain('C/. Marià Tur Tur, 14, 07800 Eivissa');
+    expect(footer).toContain(`© ${new Date().getFullYear()} JLC Ingenieros`);
+    expect(footer).not.toContain('Campos');
+    expect(readPage(legal).querySelector('main')!.text).toContain('C/. Marià Tur Tur, 14, 07800 Eivissa');
   });
 
   it('las imágenes de <main> tienen alt, width y height', () => {

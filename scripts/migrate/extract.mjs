@@ -50,7 +50,7 @@ const DESCRIPTION_OVERRIDE = {
   home: 'Ingeniería en Eivissa: energía solar, sistemas frigoríficos, gestión técnica integral e innovación para edificios e industria.',
   clients: 'Administraciones públicas, hoteles y empresas que confían en JLC Ingenieros para sus proyectos de ingeniería.',
   projects: 'Proyectos de ingeniería de JLC Ingenieros: energía solar, refrigeración industrial, naves y edificios en Ibiza y Formentera.',
-  contact: 'Contacte con JLC Ingenieros en Eivissa: C/. Carlos III, 28 Bajo, 07800 Eivissa (Illes Balears).',
+  contact: 'Contacte con JLC Ingenieros: correo electrónico, teléfono y formulario de contacto.',
   cookies: 'Política de cookies de jlc-ingenieros.com.',
   terms: 'Términos y condiciones de uso de jlc-ingenieros.com.',
 };
@@ -205,6 +205,8 @@ const writeMd = (dir, name, fm, body) =>
 /** Restos de WordPress en los textos legales (se reescriben en la tarea 6). */
 const legalFixes = (md) =>
   md
+    // Domicilio fiscal actual (el texto de WordPress traía el antiguo domicilio de la calle anterior).
+    .replace(/C\/\. Carlos\s+III, 28 Bajo/g, 'C/. Marià Tur Tur, 14')
     .replace(/^(#{1,6} \d+)\\\./gm, '$1.') // «## 1\.» -> «## 1.»
     .replaceAll('http://18.191.198.48/', '/')
     .replace(/info@(?:ex\.com)?18\.191\.198\.48/g, 'info@jlc-ingenieros.com')
@@ -263,11 +265,8 @@ for (const { key } of PAGES) {
     });
     fs.writeFileSync(OUT.publications, yaml.join('\n') + '\n');
   } else if (key === 'contact') {
-    const parts = [];
-    const h2 = mc.querySelectorAll('h2');
-    const addr = mc.querySelector('h3');
-    parts.push(toMd(h2[0].outerHTML), clean(addr.innerHTML.replace(/<br\s*\/?>/g, '\n').replace(/<[^>]+>/g, '')).replace(/ (?=07800)/, '\n\n'));
-    body = parts.join('\n\n');
+    // Sin cuerpo: el domicilio es solo fiscal y la vista de contacto muestra correo y teléfono (ui.ts).
+    body = '';
   } else if (key === 'studio') {
     body = mc.querySelectorAll('p').map((p) => toMd(p.outerHTML)).join('\n\n');
   } else {
