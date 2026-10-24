@@ -36,6 +36,8 @@ const es = {
   'contact.reachBefore': "También puede escribirnos a ",
   'contact.reachMiddle': " o llamarnos al ",
   'contact.reachAfter': ".",
+  'footer.euFunded': "Financiado por la Unión Europea – NextGenerationEU",
+  'footer.euPlan': "Plan de Recuperación, Transformación y Resiliencia",
   'publications.buy': "Ver en Amazon",
   'project.back': "Volver a proyectos",
 } as const;
@@ -78,6 +80,8 @@ const en: Record<UiKey, string> = {
   'contact.reachBefore': "También puede escribirnos a ",
   'contact.reachMiddle': " o llamarnos al ",
   'contact.reachAfter': ".",
+  'footer.euFunded': "Funded by the European Union – NextGenerationEU",
+  'footer.euPlan': "Recovery, Transformation and Resilience Plan",
   'publications.buy': "View on Amazon",
   'project.back': "Back to projects",
 };
@@ -118,6 +122,8 @@ const ca: Record<UiKey, string> = {
   'contact.reachBefore': "También puede escribirnos a ",
   'contact.reachMiddle': " o llamarnos al ",
   'contact.reachAfter': ".",
+  'footer.euFunded': "Finançat per la Unió Europea – NextGenerationEU",
+  'footer.euPlan': "Pla de Recuperació, Transformació i Resiliència",
   'publications.buy': "Veure a Amazon",
   'project.back': "Tornar a projectes",
 };

@@ -108,6 +108,24 @@ describe('cuadrícula de clientes', () => {
   });
 });
 
+describe('publicidad de la financiación europea (Kit Digital)', () => {
+  const ALTS: Record<string, string[]> = {
+    es: ['Financiado por la Unión Europea – NextGenerationEU', 'Plan de Recuperación, Transformación y Resiliencia'],
+    en: ['Funded by the European Union – NextGenerationEU', 'Recovery, Transformation and Resilience Plan'],
+    ca: ['Finançat per la Unió Europea – NextGenerationEU', 'Pla de Recuperació, Transformació i Resiliència'],
+  };
+  it('todas las páginas (404 incluida) muestran los dos logos en el pie con el alt de su idioma', () => {
+    const files = distFiles();
+    expect(files.length).toBeGreaterThan(20);
+    for (const file of files) {
+      const doc = readPage('/' + file.replace(/index\.html$/, '').replace(/^\//, ''));
+      const lang = doc.querySelector('html')!.getAttribute('lang')!;
+      const alts = doc.querySelectorAll('footer .eu-funding img').map((i) => i.getAttribute('alt'));
+      expect(alts, file).toEqual(ALTS[lang]);
+    }
+  });
+});
+
 describe('404 trilingüe', () => {
   it('contiene los textos en ES, EN y CA, noindex y enlaces a las portadas', () => {
     const page = readPage('/404.html');

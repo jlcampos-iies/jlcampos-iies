@@ -320,7 +320,19 @@ for (const doc of Object.values(docs)) {
   if (og && upl(og) && !images.has(upl(og).replace(VARIANT, ''))) registerImage(og, 'pages');
 }
 
+// Logos de publicidad de la financiación europea (Kit Digital): salen en el pie de todas las páginas de WordPress.
+for (const u of [
+  `${ORIGIN}/wp-content/uploads/2024/09/Plan-resiliencia.png`,
+  `${ORIGIN}/wp-content/uploads/2025/02/ES_Financiado_por_la_Union_Europea_RGB_BLACK.png`,
+]) registerImage(u, 'eu');
+
 await downloadImages();
+// El logo del Plan trae amplios márgenes transparentes: la copia de src/assets (la que se muestra) se recorta;
+// la de public/img queda intacta para las redirecciones de la URL antigua.
+{
+  const plan = path.join(OUT.assets, 'eu/Plan-resiliencia.png');
+  fs.writeFileSync(plan, await sharp(plan).trim({ threshold: 10 }).png({ compressionLevel: 9 }).toBuffer());
+}
 
 // ---------- 7. Redirecciones ----------
 Object.assign(redirects, {
