@@ -13,7 +13,7 @@ Esta política explica cómo se tratan los datos personales que usted facilita a
 
 - **Responsable:** José Luis Campos Giménez (JLC Ingenieros)
 - **NIF:** 20151498W
-- **Domicilio:** C/. Marià Tur Tur, 14, 07800 Eivissa (Illes Balears), España
+- **Domicilio:** C/. Des Periodista Marià Tur Tur, 14, 07800 Eivissa (Illes Balears), España
 - **Teléfono:** (+34) 616 992 440
 - **Contacto en materia de protección de datos:** [info@jlc-ingenieros.com](mailto:info@jlc-ingenieros.com)
 

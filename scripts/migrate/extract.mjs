@@ -206,7 +206,7 @@ const writeMd = (dir, name, fm, body) =>
 const legalFixes = (md) =>
   md
     // Domicilio fiscal actual (el texto de WordPress traía el antiguo domicilio de la calle anterior).
-    .replace(/C\/\. Carlos\s+III, 28 Bajo/g, 'C/. Marià Tur Tur, 14')
+    .replace(/C\/\. Carlos\s+III, 28 Bajo/g, 'C/. Des Periodista Marià Tur Tur, 14')
     .replace(/^(#{1,6} \d+)\\\./gm, '$1.') // «## 1\.» -> «## 1.»
     .replaceAll('http://18.191.198.48/', '/')
     .replace(/info@(?:ex\.com)?18\.191\.198\.48/g, 'info@jlc-ingenieros.com')

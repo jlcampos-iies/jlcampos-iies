@@ -13,7 +13,7 @@ En cumplimiento del artículo 10 de la Ley 34/2002, de 11 de julio, de servicios
 
 - **Titular:** José Luis Campos Giménez, que utiliza la denominación «JLC Ingenieros» en el ejercicio de su actividad profesional.
 - **NIF:** 20151498W
-- **Domicilio fiscal:** C/. Marià Tur Tur, 14, 07800 Eivissa (Illes Balears), España.
+- **Domicilio fiscal:** C/. Des Periodista Marià Tur Tur, 14, 07800 Eivissa (Illes Balears), España.
 - **Correo electrónico:** [jlcampos@jlc-ingenieros.com](mailto:jlcampos@jlc-ingenieros.com)
 - **Teléfono:** (+34) 616 992 440
 - **Sitio web:** [https://jlc-ingenieros.com](https://jlc-ingenieros.com)

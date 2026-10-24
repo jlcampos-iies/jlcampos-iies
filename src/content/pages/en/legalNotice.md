@@ -13,7 +13,7 @@ In accordance with Article 10 of Spanish Law 34/2002 of 11 July on Information S
 
 - **Owner:** José Luis Campos Giménez, who uses the name “JLC Ingenieros” in his professional practice.
 - **Tax ID (NIF):** 20151498W
-- **Tax address:** C/. Marià Tur Tur, 14, 07800 Eivissa (Illes Balears), Spain.
+- **Tax address:** C/. Des Periodista Marià Tur Tur, 14, 07800 Eivissa (Illes Balears), Spain.
 - **Email:** [jlcampos@jlc-ingenieros.com](mailto:jlcampos@jlc-ingenieros.com)
 - **Telephone:** (+34) 616 992 440
 - **Website:** [https://jlc-ingenieros.com](https://jlc-ingenieros.com)

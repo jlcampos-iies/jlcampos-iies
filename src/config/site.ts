@@ -6,7 +6,7 @@ export const site = {
   rightsEmail: 'info@jlc-ingenieros.com',
   phone: '(+34) 616 992 440',
   address: {
-    street: 'C/. Marià Tur Tur, 14',
+    street: 'C/. Des Periodista Marià Tur Tur, 14',
     postalCode: '07800',
     locality: 'Eivissa',
     region: 'Illes Balears',

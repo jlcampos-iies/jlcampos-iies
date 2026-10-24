@@ -76,10 +76,10 @@ describe('vistas en castellano', () => {
     ['/ca/', '/ca/avis-legal/'],
   ])('%s: domicilio fiscal nuevo en el pie y en %s, y copyright con la marca', (home, legal) => {
     const footer = readPage(home).querySelector('footer')!.text;
-    expect(footer).toContain('C/. Marià Tur Tur, 14, 07800 Eivissa');
+    expect(footer).toContain('C/. Des Periodista Marià Tur Tur, 14, 07800 Eivissa');
     expect(footer).toContain(`© ${new Date().getFullYear()} JLC Ingenieros`);
     expect(footer).not.toContain('Campos');
-    expect(readPage(legal).querySelector('main')!.text).toContain('C/. Marià Tur Tur, 14, 07800 Eivissa');
+    expect(readPage(legal).querySelector('main')!.text).toContain('C/. Des Periodista Marià Tur Tur, 14, 07800 Eivissa');
   });
 
   it('las imágenes de <main> tienen alt, width y height', () => {
