@@ -24,7 +24,10 @@ export function distFiles(): string[] {
     for (const entry of readdirSync(dir, { withFileTypes: true })) {
       const full = join(dir, entry.name);
       if (entry.isDirectory()) walk(full);
-      else if (entry.name.endsWith('.html')) out.push(relative(DIST, full));
+      // Los ficheros de verificación de Google Search Console (public/google*.html) no son páginas.
+      else if (entry.name.endsWith('.html') && !/^google[0-9a-f]+\.html$/.test(entry.name)) {
+        out.push(relative(DIST, full));
+      }
     }
   };
   walk(DIST);

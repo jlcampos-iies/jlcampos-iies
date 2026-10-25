@@ -153,3 +153,10 @@ describe('html-validate', () => {
     expect(problems).toEqual([]);
   });
 });
+
+describe('verificación de Google Search Console', () => {
+  it('public/googlebaf2e61fdcb21162.html se publica tal cual', () => {
+    const text = readFileSync(resolve(DIST, 'googlebaf2e61fdcb21162.html'), 'utf8');
+    expect(text.trim()).toBe('google-site-verification: googlebaf2e61fdcb21162.html');
+  });
+});
