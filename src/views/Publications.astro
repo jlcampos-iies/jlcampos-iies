@@ -19,7 +19,12 @@ const note = lang === 'es' ? '' : t(lang, 'met.spanishOnly');
   <section class="met-card" aria-labelledby="met-title">
     <h2 id="met-title">{t(lang, 'met.title')}</h2>
     <p class="met-card__subtitle">{t(lang, 'met.subtitle')}</p>
-    <p>{t(lang, 'met.text')}</p>
+    <h3>{t(lang, 'met.howTitle')}</h3>
+    <ul class="met-card__list">
+      <li>{t(lang, 'met.item1')}</li>
+      <li>{t(lang, 'met.item2')}</li>
+    </ul>
+    <p class="met-card__value">{t(lang, 'met.value')}</p>
     <div class="actions">
       <span class="action">
         <a class="btn" href={`${MET}unidades/ud01-magnitudes/`} target="_blank" rel="noopener">{t(lang, 'met.tryFree')}</a>
@@ -31,7 +36,7 @@ const note = lang === 'es' ? '' : t(lang, 'met.spanishOnly');
       </span>
     </div>
     <p class="met-card__fp">
-      {t(lang, 'met.fpBefore')}<a href="mailto:info@jlc-ingenieros.com">{t(lang, 'met.fpLink')}</a>
+      {t(lang, 'met.fpBefore')}<a href="mailto:info@jlc-ingenieros.com">{t(lang, 'met.fpLink')}</a>{t(lang, 'met.fpAfter')}
     </p>
   </section>
   <Content />
@@ -54,6 +59,7 @@ const note = lang === 'es' ? '' : t(lang, 'met.spanishOnly');
             {data.amazon && (
               <p class="buy">
                 <span class="buy__label">{t(lang, 'publications.buyLabel')}</span>
+                <span class="buy__scope">{data.unit ? `${t(lang, 'publications.unit')} ${data.unit}` : t(lang, 'publications.volume')}</span>
                 <a class="btn" href={`https://www.amazon.es/dp/${data.amazon.print}`} target="_blank" rel="noopener" aria-label={`${t(lang, 'publications.print')}: ${data.title[lang]}`}>{t(lang, 'publications.print')}</a>
                 <a class="btn" href={`https://www.amazon.es/dp/${data.amazon.kindle}`} target="_blank" rel="noopener" aria-label={`${t(lang, 'publications.kindle')}: ${data.title[lang]}`}>{t(lang, 'publications.kindle')}</a>
               </p>

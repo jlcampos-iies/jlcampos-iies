@@ -30,6 +30,7 @@
     print: "B09BGHZ3K6"
     kindle: "B09BDM2K7L"
   companionUrl: "https://met.jlc-ingenieros.com/unidades/ud01-magnitudes/"
+  unit: 1
   title:
     es: "Identificación de Magnitudes en Instalaciones Térmicas (Máquinas y Equipos Térmicos I nº 1)"
     en: "Identificación de Magnitudes en Instalaciones Térmicas (Máquinas y Equipos Térmicos I nº 1)"
@@ -44,6 +45,7 @@
     print: "B09BMBF4CL"
     kindle: "B09BFLFJ6V"
   companionUrl: "https://met.jlc-ingenieros.com/unidades/ud02-higrometria/"
+  unit: 2
   title:
     es: "Higrometría (Máquinas y Equipos Térmicos I nº 2)"
     en: "Higrometría (Máquinas y Equipos Térmicos I nº 2)"
@@ -58,6 +60,7 @@
     print: "B09BM38K12"
     kindle: "B09BFRPY6K"
   companionUrl: "https://met.jlc-ingenieros.com/unidades/ud03-cargas-termicas/"
+  unit: 3
   title:
     es: "Cálculo de Cargas Térmicas (Máquinas y Equipos Térmicos I nº 3)"
     en: "Cálculo de Cargas Térmicas (Máquinas y Equipos Térmicos I nº 3)"
@@ -72,6 +75,7 @@
     print: "B09BG77471"
     kindle: "B09BG68YTJ"
   companionUrl: "https://met.jlc-ingenieros.com/unidades/ud04-generacion-calor/"
+  unit: 4
   title:
     es: "Generación de Calor (Máquinas y Equipos Térmicos I nº 4)"
     en: "Generación de Calor (Máquinas y Equipos Térmicos I nº 4)"
@@ -86,6 +90,7 @@
     print: "B09BGPG2Q1"
     kindle: "B09BG35C8H"
   companionUrl: "https://met.jlc-ingenieros.com/unidades/ud05-ciclo-frigorifico/"
+  unit: 5
   title:
     es: "Elaboración del Ciclo Frigorífico (Máquinas y Equipos Térmicos I nº 5)"
     en: "Elaboración del Ciclo Frigorífico (Máquinas y Equipos Térmicos I nº 5)"
@@ -100,6 +105,7 @@
     print: "B09BJQGG16"
     kindle: "B09BNZTMBW"
   companionUrl: "https://met.jlc-ingenieros.com/unidades/ud06-refrigerantes-lubricantes/"
+  unit: 6
   title:
     es: "Selección de Fluidos Refrigerantes y Lubricantes (Máquinas y Equipos Térmicos II nº 1)"
     en: "Selección de Fluidos Refrigerantes y Lubricantes (Máquinas y Equipos Térmicos II nº 1)"

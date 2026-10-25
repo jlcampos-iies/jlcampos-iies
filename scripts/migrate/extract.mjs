@@ -62,12 +62,12 @@ const slug = (s) =>
 const MET_BASE = 'https://met.jlc-ingenieros.com/';
 const MET_BOOKS = {
   B09BNMRBZT: { print: '8461660870', path: '' },
-  B09BDM2K7L: { print: 'B09BGHZ3K6', path: 'unidades/ud01-magnitudes/' },
-  B09BFLFJ6V: { print: 'B09BMBF4CL', path: 'unidades/ud02-higrometria/' },
-  B09BFRPY6K: { print: 'B09BM38K12', path: 'unidades/ud03-cargas-termicas/' },
-  B09BG68YTJ: { print: 'B09BG77471', path: 'unidades/ud04-generacion-calor/' },
-  B09BG35C8H: { print: 'B09BGPG2Q1', path: 'unidades/ud05-ciclo-frigorifico/' },
-  B09BNZTMBW: { print: 'B09BJQGG16', path: 'unidades/ud06-refrigerantes-lubricantes/' },
+  B09BDM2K7L: { print: 'B09BGHZ3K6', path: 'unidades/ud01-magnitudes/', unit: 1 },
+  B09BFLFJ6V: { print: 'B09BMBF4CL', path: 'unidades/ud02-higrometria/', unit: 2 },
+  B09BFRPY6K: { print: 'B09BM38K12', path: 'unidades/ud03-cargas-termicas/', unit: 3 },
+  B09BG68YTJ: { print: 'B09BG77471', path: 'unidades/ud04-generacion-calor/', unit: 4 },
+  B09BG35C8H: { print: 'B09BGPG2Q1', path: 'unidades/ud05-ciclo-frigorifico/', unit: 5 },
+  B09BNZTMBW: { print: 'B09BJQGG16', path: 'unidades/ud06-refrigerantes-lubricantes/', unit: 6 },
 };
 const q = (s) => JSON.stringify(s); // cadena YAML válida entre comillas dobles
 const clean = (s) => s.replace(/ /g, ' ').replace(/\s+/g, ' ').trim();
@@ -281,6 +281,7 @@ for (const { key } of PAGES) {
         `    print: ${q(met.print)}`,
         `    kindle: ${q(kindle)}`,
         `  companionUrl: ${q(MET_BASE + met.path)}`,
+        ...(met.unit ? [`  unit: ${met.unit}`] : []),
         `  title:`,
         `    es: ${q(title)}`,
         `    en: ${q(title)}`,

@@ -61,6 +61,16 @@ describe('vistas en castellano', () => {
     expect(books.filter((b) => b.querySelectorAll('a[href^="https://www.amazon.es/dp/"]').length === 2)).toHaveLength(7);
   });
 
+  it.each([
+    ['/publicaciones/', 'Vol. I completo', 'Unidad'],
+    ['/en/publications/', 'Complete Vol. I', 'Unit'],
+    ['/ca/publicacions/', 'Vol. I complet', 'Unitat'],
+  ])('%s: la fila de compra distingue volumen completo y unidad', (path, vol, unit) => {
+    const books = readPage(path).querySelectorAll('.book');
+    const scopes = books.map((b) => b.querySelector('.buy__scope')?.text.trim() ?? null);
+    expect(scopes).toEqual([vol, null, ...[1, 2, 3, 4, 5, 6].map((n) => `${unit} ${n}`)]);
+  });
+
   it.each(PUB_PAGES)('%s: cada libro enlaza a su página del complemento', (path) => {
     const books = readPage(path).querySelectorAll('.book');
     expect(books).toHaveLength(8);
@@ -85,6 +95,24 @@ describe('vistas en castellano', () => {
     // La tarjeta va antes que el texto y los libros.
     const main = page.querySelector('main')!.innerHTML;
     expect(main.indexOf('met-card')).toBeLessThan(main.indexOf('class="books"'));
+    if (path === '/publicaciones/') {
+      expect(card.querySelector('h2')!.text.trim()).toBe('Complemento interactivo');
+      expect(card.text).toContain('El libro Máquinas y Equipos Térmicos, hecho para tocarse: diagramas vivos, cálculos que responden y animaciones para ver el porqué.');
+      expect(card.querySelector('h3')!.text.trim()).toBe('Cómo accedo al complemento');
+      const items = card.querySelectorAll('li').map((l) => l.text.trim());
+      expect(items).toEqual([
+        'Las Unidades 1 y 2 son de acceso libre: pruébalas sin registro.',
+        'El resto de unidades se desbloquean con el código de tu ejemplar del libro (impreso o Kindle). Lo introduces una vez y quedan asociadas a tu cuenta.',
+      ]);
+      expect(card.querySelector('.met-card__value')!.text.trim()).toBe(
+        'No sustituye al libro: lo acompaña. Donde el papel explica, el complemento te deja experimentar — mueves una variable y ves cómo responde la máquina.',
+      );
+      const fp = card.querySelector('.met-card__fp')!;
+      expect(fp.text.trim()).toBe('¿Eres centro de FP o docente? Escríbenos para uso en el aula y licencias.');
+      expect(fp.querySelector('a')!.getAttribute('href')).toBe('mailto:info@jlc-ingenieros.com');
+      const btns = card.querySelectorAll('.actions .btn').map((b) => b.text.trim());
+      expect(btns).toEqual(['Pruébalo gratis', 'Ya tengo el libro']);
+    }
     const note = path === '/publicaciones/' ? null : path.startsWith('/en/') ? '(in Spanish)' : '(en castellà)';
     if (note) {
       expect(card.text).toContain(note);
@@ -124,6 +152,12 @@ describe('vistas en castellano', () => {
     expect(hrefs).toContain('https://met.jlc-ingenieros.com/unidades/ud01-magnitudes/');
     expect(hrefs).toContain(pubs);
     if (note) expect(section.text).toContain(note);
+    if (home === '/') {
+      expect(section.querySelector('h2')!.text.trim()).toBe('Formación y divulgación');
+      expect(section.text).toContain(
+        'Materiales para aprender instalaciones térmicas, nacidos en el aula de Formación Profesional: un libro de texto y un complemento web interactivo que lo acompaña. Frío, calor y climatización, explicados para entenderlos de verdad.',
+      );
+    }
   });
 
   it.each(['/contacto/', '/en/contact/', '/ca/contacte/'])(

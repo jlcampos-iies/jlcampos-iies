@@ -68,6 +68,8 @@ const publications = defineCollection({
         inProgress: z.boolean().optional(),
         // Página del libro/unidad en el complemento interactivo (solo en castellano).
         companionUrl: z.url(),
+        // Nº de unidad (1-6); ausente en los volúmenes completos.
+        unit: z.number().int().min(1).optional(),
         title: localized,
         summary: localized,
         order: z.number(),
