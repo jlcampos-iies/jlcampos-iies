@@ -79,3 +79,9 @@ Conectarse (`ssh <usuario>@3.133.180.219`) y revisar:
 - [ ] No renovar **Salient** (tema de ThemeForest/Envato).
 
 Desactivar la renovación automática en cada proveedor y quitar la licencia del sitio si el panel lo permite.
+
+## 6. Limpieza del repositorio (tras eliminar la instancia)
+
+- [ ] Borrar el script de migración desde WordPress, que ya no podrá ejecutarse: `scripts/migrate/extract.mjs` (y la carpeta `scripts/migrate/` si queda vacía). Quitar también las dependencias que solo usaba él (`turndown`, `@types/turndown`) si ningún otro fichero las importa, y ejecutar `npm test` antes de hacer commit.
+
+> Datos de la instancia (inventario del 23-10-2026): región `us-east-2`, instancia `JLC_Ingenieros_WordPress` (plan `micro_3_0`), IP estática `IPjlc` (`3.133.180.219`).
