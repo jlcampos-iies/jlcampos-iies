@@ -756,3 +756,26 @@ img {
 .met-card .btn {
   padding-inline: 0.875rem;
 }
+
+.book__series {
+  display: block;
+  margin-top: 0.25rem;
+  font-size: 0.9375rem;
+  font-weight: 400;
+  color: var(--muted);
+}
+
+.buy__what {
+  display: inline-flex;
+  align-items: baseline;
+  gap: 0.5rem;
+}
+.buy__links {
+  display: inline-flex;
+  gap: 0.5rem;
+}
+@media (max-width: 599.98px) {
+  .buy__what {
+    flex-basis: 100%;
+  }
+}

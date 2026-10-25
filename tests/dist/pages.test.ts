@@ -134,6 +134,9 @@ describe('vistas en castellano', () => {
       expect(titles[5]).toMatch(/^Generación de Calor/);
       expect(titles[6]).toMatch(/^Elaboración del Ciclo Frigorífico/);
       expect(titles[7]).toMatch(/^Selección de Fluidos Refrigerantes/);
+      const series = readPage(path).querySelectorAll('.book h2 .book__series').map((e) => e.text.trim());
+      expect(series[0]).toBe('Máquinas y Equipos Térmicos I nº 1');
+      expect(series).toHaveLength(6);
       const vol2 = readPage(path).querySelectorAll('.book')[1];
       expect(vol2.querySelector('.badge')).not.toBeNull();
       expect(vol2.querySelector('a[href="https://met.jlc-ingenieros.com/"]')).not.toBeNull();
