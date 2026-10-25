@@ -11,7 +11,7 @@ services:
   - title: "Sistemas frigoríficos de alto rendimiento"
     text: "Soluciones personalizadas para instalaciones de refrigeración industrial y comercial."
   - title: "Gestión técnica integral"
-    text: "Diseño, planificación y dirección de ejecución de instalaciones adaptadas a tus necesidades."
+    text: "Diseño, planificación y dirección de ejecución de instalaciones adaptadas a sus necesidades."
   - title: "Innovación y eficiencia"
     text: "Tecnología de vanguardia para optimizar el rendimiento y reducir el impacto ambiental."
 ---

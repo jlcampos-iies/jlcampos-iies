@@ -163,6 +163,14 @@ describe('vistas en castellano', () => {
     }
   });
 
+  it.each([
+    ['/contacto/', 'También puede escribirnos a'],
+    ['/en/contact/', 'You can also write to us at'],
+    ['/ca/contacte/', 'També ens podeu escriure a'],
+  ])('%s: frase de contacto en su idioma', (path, phrase) => {
+    expect(readPage(path).querySelector('main')!.text).toContain(phrase);
+  });
+
   it.each(['/contacto/', '/en/contact/', '/ca/contacte/'])(
     '%s: sin mapa ni enlaces a mapas; con correo, teléfono y formulario',
     (path) => {
