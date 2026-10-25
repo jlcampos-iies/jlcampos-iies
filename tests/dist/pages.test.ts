@@ -158,7 +158,7 @@ describe('vistas en castellano', () => {
     if (home === '/') {
       expect(section.querySelector('h2')!.text.trim()).toBe('Formación y divulgación');
       expect(section.text).toContain(
-        'Materiales para aprender instalaciones térmicas, nacidos en el aula de Formación Profesional: un libro de texto y un complemento web interactivo que lo acompaña. Frío, calor y climatización, explicados para entenderlos de verdad.',
+        'Material didáctico para el estudio de las instalaciones térmicas, desarrollado en el aula de Formación Profesional: un libro de texto y un complemento web interactivo que lo acompaña. Producción de frío, calor y climatización, tratados con el rigor técnico necesario para comprenderlos en profundidad.',
       );
     }
   });
