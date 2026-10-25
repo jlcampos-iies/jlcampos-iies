@@ -1,11 +1,10 @@
 #!/usr/bin/env bash
 # Genera los UNICOS lotes de cambios de Route 53 permitidos en el corte de jlc-ingenieros.com.
-# Uso: scripts/dns/render.sh <cutover|rollback|rollback-a|ttl60|ttl300> [dominio-cloudfront]
+# Uso: scripts/dns/render.sh cutover <dxxxx.cloudfront.net>
 #   cutover  <dxxxx.cloudfront.net>  UPSERT A ALIAS + CREATE AAAA ALIAS del apex hacia CloudFront.
-#   rollback <dxxxx.cloudfront.net>  UPSERT A 3.133.180.219 (TTL 60) + DELETE AAAA ALIAS del apex.
-#   rollback-a                       Emergencia: solo UPSERT A 3.133.180.219 (TTL 60); no toca el AAAA.
-#   ttl60 | ttl300                   UPSERT A 3.133.180.219 con ese TTL (solo mientras el apex
-#                                    apunta a WordPress; tras el corte el A es un ALIAS sin TTL).
+#   Los modos rollback, rollback-a, ttl60 y ttl300 (A del apex a WordPress 3.133.180.219) se
+#   retiraron el 25-10-2026: WordPress se eliminó y su IP estática se liberó, así que apuntar
+#   el dominio a esa IP lo entregaría a quien la reciba después. Ahora se rechazan.
 #   El dominio se acepta con o sin punto final; en el lote siempre va con punto final, que es
 #   como lo guarda Route 53 (el DELETE del AAAA tiene que coincidir exactamente).
 # Imprime el JSON para `aws route53 change-resource-record-sets --change-batch file://...`.
@@ -14,11 +13,10 @@
 set -eu
 
 APEX='jlc-ingenieros.com.'
-WORDPRESS_IP='3.133.180.219'
 CLOUDFRONT_ZONE='Z2FDTNDATAQYW2' # zona fija de los alias a CloudFront (valor de AWS)
 
 usage() {
-  echo "uso: $0 <cutover|rollback> <dxxxx.cloudfront.net> | $0 <rollback-a|ttl60|ttl300>" >&2
+  echo "uso: $0 cutover <dxxxx.cloudfront.net>" >&2
   exit 2
 }
 
@@ -43,11 +41,6 @@ change_alias() { # change_alias <accion> <tipo>
     "$1" "$APEX" "$2" "$(alias_target)"
 }
 
-change_wordpress() { # change_wordpress <ttl>
-  printf '    { "Action": "UPSERT", "ResourceRecordSet": { "Name": "%s", "Type": "A", "TTL": %s, "ResourceRecords": [ { "Value": "%s" } ] } }' \
-    "$APEX" "$1" "$WORDPRESS_IP"
-}
-
 batch() { # batch <comentario> <cambio>...
   comment=$1
   shift
@@ -67,20 +60,9 @@ case "$MODE" in
     batch "Corte: apex jlc-ingenieros.com A/AAAA ALIAS a $DOMAIN" \
       "$(change_alias UPSERT A)" "$(change_alias CREATE AAAA)"
     ;;
-  rollback)
-    needs_domain "$@"
-    batch "Vuelta atras: apex jlc-ingenieros.com A a WordPress $WORDPRESS_IP (TTL 60) y sin AAAA" \
-      "$(change_wordpress 60)" "$(change_alias DELETE AAAA)"
-    ;;
-  rollback-a)
-    [ "$#" -eq 1 ] || usage
-    batch "Vuelta atras de emergencia: solo el A del apex jlc-ingenieros.com a WordPress $WORDPRESS_IP (TTL 60)" \
-      "$(change_wordpress 60)"
-    ;;
-  ttl60 | ttl300)
-    [ "$#" -eq 1 ] || usage
-    ttl=${MODE#ttl}
-    batch "TTL $ttl del A del apex jlc-ingenieros.com (WordPress $WORDPRESS_IP)" "$(change_wordpress "$ttl")"
+  rollback | rollback-a | ttl60 | ttl300)
+    echo "error: '$MODE' ya no existe: WordPress se retiró el 25-10-2026 y su IP 3.133.180.219 se liberó" >&2
+    exit 2
     ;;
   *)
     usage

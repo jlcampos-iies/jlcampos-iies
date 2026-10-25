@@ -1,5 +1,11 @@
 # Retirada del WordPress (instancia Lightsail `3.133.180.219`)
 
+> **Hecho el 25-10-2026**, el mismo día del corte, por decisión del titular (sin el periodo de espera de 2–4 semanas):
+> revisión de la instancia (solo WordPress de `jlc-ingenieros.com`, sin otras tareas ni dominios), instancia
+> `JLC_Ingenieros_WordPress` eliminada, IP estática `IPjlc` liberada y snapshot `wordpress-antes-del-corte-20261025`
+> borrado (no se conserva copia). `scripts/check-isolation.sh --compare` y `scripts/smoke.sh` en verde después.
+> Script `scripts/migrate/extract.mjs` y dependencias `turndown` borrados. Queda pendiente solo la cancelación de las licencias (apartado 5).
+
 Pasos 12–14 del plan de corte (spec §10). Solo se empieza cuando la web estática lleva funcionando en `jlc-ingenieros.com` desde el corte (`docs/runbook-corte.md`) sin incidencias.
 
 > **Atención: el área privada es OTRA máquina.** `areaprivada`, `demo` y `met` están en una **EC2** (`3.12.236.157`), no en Lightsail. Nada de esta lista se hace sobre esa EC2, sus volúmenes, su IP elástica ni sus *security groups*. Antes de cada acción, comprobar que la instancia es la de IP **`3.133.180.219`**. Esta retirada no toca el DNS.

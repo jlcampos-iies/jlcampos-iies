@@ -2,7 +2,6 @@ import { describe, expect, it } from 'vitest';
 import { spawnSync } from 'node:child_process';
 
 const APEX = 'jlc-ingenieros.com.';
-const WORDPRESS_IP = '3.133.180.219';
 const CLOUDFRONT_ZONE = 'Z2FDTNDATAQYW2';
 const DOMAIN = 'd1abc2def3ghi4.cloudfront.net';
 // Route 53 guarda el DNSName del alias con punto final; el DELETE tiene que coincidir exactamente.
@@ -35,17 +34,9 @@ function find(b: Batch, action: string, type: string) {
   return c!.ResourceRecordSet;
 }
 
-const MODES: [string, string[]][] = [
-  ['cutover', [DOMAIN]],
-  ['rollback', [DOMAIN]],
-  ['rollback-a', []],
-  ['ttl60', []],
-  ['ttl300', []],
-];
-
 describe('scripts/dns/render.sh', () => {
-  it.each(MODES)('%s: solo toca el A/AAAA del apex y lleva Comment', (mode, rest) => {
-    const b = batch(mode, ...rest);
+  it('cutover: solo toca el A/AAAA del apex y lleva Comment', () => {
+    const b = batch('cutover', DOMAIN);
     expect(typeof b.Comment).toBe('string');
     expect(b.Comment.length).toBeGreaterThan(0);
     expect(b.Changes.length).toBeGreaterThan(0);
@@ -66,52 +57,23 @@ describe('scripts/dns/render.sh', () => {
     }
   });
 
-  it('rollback: UPSERT A 3.133.180.219 (TTL 60) + DELETE AAAA ALIAS', () => {
-    const b = batch('rollback', DOMAIN);
-    expect(b.Changes).toHaveLength(2);
-    const a = find(b, 'UPSERT', 'A');
-    expect(a.TTL).toBe(60);
-    expect(a.ResourceRecords).toEqual([{ Value: WORDPRESS_IP }]);
-    expect(a.AliasTarget).toBeUndefined();
-    const aaaa = find(b, 'DELETE', 'AAAA');
-    expect(aaaa.AliasTarget).toEqual({ HostedZoneId: CLOUDFRONT_ZONE, DNSName: ALIAS_DNS, EvaluateTargetHealth: false });
-  });
-
-  it('rollback-a: solo UPSERT A 3.133.180.219 (TTL 60), sin tocar el AAAA', () => {
-    const b = batch('rollback-a');
-    expect(b.Changes).toHaveLength(1);
-    const a = find(b, 'UPSERT', 'A');
-    expect(a.Name).toBe(APEX);
-    expect(a.TTL).toBe(60);
-    expect(a.ResourceRecords).toEqual([{ Value: WORDPRESS_IP }]);
-    expect(a.AliasTarget).toBeUndefined();
-  });
-
-  it.each(['cutover', 'rollback'])('%s: acepta el dominio con punto final (copiado de Route 53) sin duplicarlo', (mode) => {
-    expect(batch(mode, ALIAS_DNS)).toEqual(batch(mode, DOMAIN));
-  });
-
-  it.each([
-    ['ttl60', 60],
-    ['ttl300', 300],
-  ])('%s: UPSERT A 3.133.180.219 con TTL %i', (mode, ttl) => {
-    const b = batch(mode as string);
-    expect(b.Changes).toHaveLength(1);
-    const a = find(b, 'UPSERT', 'A');
-    expect(a.TTL).toBe(ttl);
-    expect(a.ResourceRecords).toEqual([{ Value: WORDPRESS_IP }]);
+  it('cutover: acepta el dominio con punto final (copiado de Route 53) sin duplicarlo', () => {
+    expect(batch('cutover', ALIAS_DNS)).toEqual(batch('cutover', DOMAIN));
   });
 
   it.each([
     ['cutover sin dominio', ['cutover']],
-    ['rollback sin dominio', ['rollback']],
     ['dominio que no es de CloudFront', ['cutover', 'evil.example.com']],
     ['dominio con dos puntos finales', ['cutover', `${DOMAIN}..`]],
     ['dominio con comillas (inyeccion JSON)', ['cutover', 'd1"x.cloudfront.net']],
     ['modo desconocido', ['delete-all']],
     ['sin argumentos', []],
-    ['argumentos de mas', ['ttl60', DOMAIN]],
-    ['rollback-a con dominio', ['rollback-a', DOMAIN]],
+    ['argumentos de mas', ['cutover', DOMAIN, 'x']],
+    // WordPress retirado (25-10-2026): ningún lote puede volver a apuntar el apex a su IP liberada.
+    ['rollback (WordPress retirado)', ['rollback', DOMAIN]],
+    ['rollback-a (WordPress retirado)', ['rollback-a']],
+    ['ttl60 (WordPress retirado)', ['ttl60']],
+    ['ttl300 (WordPress retirado)', ['ttl300']],
   ])('rechaza %s', (_name, args) => {
     const r = render(...args);
     expect(r.code).not.toBe(0);

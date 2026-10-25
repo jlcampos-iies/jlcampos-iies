@@ -1,5 +1,10 @@
 # Runbook del corte de jlc-ingenieros.com (WordPress → S3 + CloudFront)
 
+> **Corte hecho el 25-10-2026 a las 20:02 (CET)** y WordPress retirado ese mismo día (ver `docs/retirada-wordpress.md`).
+> La instancia Lightsail y su IP ya no existen: **la «Vuelta atrás» de este documento ya no es posible** y los modos
+> `rollback`, `rollback-a` y `ttl300` de `scripts/dns/render.sh` no deben usarse (apuntarían el dominio a una IP liberada).
+> El documento se conserva como registro de cómo se hizo el corte.
+
 Lo ejecuta el titular, a mano, con sus credenciales de AWS. Sigue los pasos 1–14 de la spec (§10) y se apoya en `infra/README.md` para el despliegue de las pilas. Las órdenes se ejecutan desde la raíz del repo, en `main` actualizado (`git checkout main && git pull`).
 
 > **Qué NO se toca nunca (requisito nº 1)**
