@@ -78,7 +78,10 @@ describe('colecciones de datos', () => {
   it('publications tiene enlaces de Amazon limpios', async () => {
     const books = await getCollection('publications');
     expect(books.length).toBeGreaterThan(0);
-    for (const b of books) expect(b.data.amazonUrl).toMatch(/^https:\/\/www\.amazon\.es\/[^/?]+\/dp\/[A-Z0-9]{10}$/);
+    for (const b of books) {
+      if (b.data.inProgress) expect(b.data.amazonUrl).toBeUndefined();
+      else expect(b.data.amazonUrl).toMatch(/^https:\/\/www\.amazon\.es\/[^/?]+\/dp\/[A-Z0-9]{10}$/);
+    }
   });
 
   it('los proyectos en castellano tienen portada y orden único', async () => {

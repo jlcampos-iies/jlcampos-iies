@@ -274,6 +274,11 @@ for (const { key } of PAGES) {
         `    ca: ${q(sum[i])}`,
       ].join('\n');
     });
+    // Volumen II (en redacción, no estaba en WordPress): va justo después del Volumen I.
+    // Se conserva el bloque ya editado del YAML actual (portada en assets/images/publications/vol2-cover.jpg).
+    const current = fs.existsSync(OUT.publications) ? fs.readFileSync(OUT.publications, 'utf8') : '';
+    const vol2 = current.match(/^- id: "maquinas-y-equipos-termicos-ii"\n(?:  .*\n)+/m);
+    if (vol2) yaml.splice(1, 0, vol2[0].trimEnd());
     fs.writeFileSync(OUT.publications, yaml.join('\n') + '\n');
   } else if (key === 'contact') {
     // Sin cuerpo: el domicilio es solo fiscal y la vista de contacto muestra correo y teléfono (ui.ts).

@@ -39,6 +39,8 @@ const es = {
   'footer.euFunded': "Financiado por la Unión Europea – NextGenerationEU",
   'footer.euPlan': "Plan de Recuperación, Transformación y Resiliencia",
   'publications.buy': "Ver en Amazon",
+  'publications.inProgress': 'En redacción',
+  'publications.more': 'Complemento interactivo',
   'project.back': "Volver a proyectos",
 } as const;
 
@@ -83,6 +85,8 @@ const en: Record<UiKey, string> = {
   'footer.euFunded': "Funded by the European Union – NextGenerationEU",
   'footer.euPlan': "Recovery, Transformation and Resilience Plan",
   'publications.buy': "View on Amazon",
+  'publications.inProgress': 'In progress',
+  'publications.more': 'Interactive companion',
   'project.back': "Back to projects",
 };
 
@@ -125,6 +129,8 @@ const ca: Record<UiKey, string> = {
   'footer.euFunded': "Finançat per la Unió Europea – NextGenerationEU",
   'footer.euPlan': "Pla de Recuperació, Transformació i Resiliència",
   'publications.buy': "Veure a Amazon",
+  'publications.inProgress': 'En redacció',
+  'publications.more': 'Complement interactiu',
   'project.back': "Tornar a projectes",
 };
 

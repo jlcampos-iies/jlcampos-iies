@@ -302,6 +302,26 @@ img {
   background: var(--navy-dark);
   border-color: var(--navy-dark);
 }
+.btn--secondary {
+  color: var(--navy);
+  background: var(--bg);
+}
+.btn--secondary:hover {
+  color: var(--on-navy);
+}
+.book .btn + .btn {
+  margin-left: 0.5rem;
+}
+.badge {
+  display: inline-block;
+  margin: 0 0 0.5rem;
+  padding: 0.125rem 0.625rem;
+  font-size: 0.8125rem;
+  font-weight: 500;
+  color: var(--navy);
+  background: #e8eef6;
+  border-radius: 999px;
+}
 .page-content.prose {
   width: min(100% - 2 * var(--gutter), var(--max) - 2 * var(--gutter));
   margin-block: 2rem;

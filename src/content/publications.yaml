@@ -9,6 +9,18 @@
     es: "Los técnicos de equipos térmicos a menudo deben apoyarse en su experiencia o en la de otros cuando no disponen de información exacta para resolver un problema. Con el tiempo, desarrollan reglas prácticas basadas en la observación y el trabajo cotidiano que les ayudan a diagnosticar fallos de forma eficaz. Estos conocimientos empíricos, aunque no siempre infalibles, resultan muy útiles en su labor diaria. El primer objetivo del material es ofrecer una base teórica y una referencia de consulta para comprender los fenómenos de las instalaciones térmicas. El segundo es servir como guía de estudio para los módulos de Máquinas y Equipos Térmicos incluidos en los ciclos formativos de grado medio de climatización, refrigeración y producción de calor."
     en: "Thermal equipment technicians often have to rely on their own experience, or that of others, when they lack exact information to solve a problem. Over time, they develop rules of thumb based on observation and day-to-day work that help them diagnose faults effectively. This empirical knowledge, although not always infallible, is very useful in their daily work. The first aim of this material is to provide a theoretical foundation and a reference for understanding the phenomena that occur in thermal installations. The second is to serve as a study guide for the Thermal Machines and Equipment modules of the intermediate vocational training courses in air conditioning, refrigeration and heat production."
     ca: "Els tècnics d'equips tèrmics sovint s'han de refiar de la seva experiència o de la d'altres quan no disposen d'informació exacta per resoldre un problema. Amb el temps, desenvolupen regles pràctiques basades en l'observació i la feina quotidiana que els ajuden a diagnosticar avaries de manera eficaç. Aquests coneixements empírics, tot i que no sempre són infal·libles, resulten molt útils en la seva tasca diària. El primer objectiu del material és oferir una base teòrica i una referència de consulta per comprendre els fenòmens de les instal·lacions tèrmiques. El segon és servir de guia d'estudi per als mòduls de Màquines i Equips Tèrmics dels cicles formatius de grau mitjà de climatització, refrigeració i producció de calor."
+- id: "maquinas-y-equipos-termicos-ii"
+  cover: "../assets/images/publications/vol2-cover.jpg"
+  inProgress: true
+  infoUrl: "https://met.jlc-ingenieros.com/"
+  title:
+    es: "Máquinas y Equipos Térmicos II"
+    en: "Máquinas y Equipos Térmicos II"
+    ca: "Máquinas y Equipos Térmicos II"
+  summary:
+    es: "Segundo volumen de los materiales: reúne los Bloques III y IV (unidades 6 a 10) del módulo de Máquinas y Equipos Térmicos. Está en redacción; mientras tanto, el complemento interactivo del libro anima los conceptos y resuelve los ejemplos paso a paso."
+    en: "Second volume of the materials, covering Blocks III and IV (units 6 to 10) of the Thermal Machines and Equipment module. It is currently being written; in the meantime, the book's interactive companion brings the concepts to life and works through the examples step by step."
+    ca: "Segon volum dels materials: aplega els Blocs III i IV (unitats 6 a 10) del mòdul de Màquines i Equips Tèrmics. És en redacció; mentrestant, el complement interactiu del llibre anima els conceptes i resol els exemples pas a pas."
 - id: "identificacion-de-magnitudes-en-instalaciones-termicas-maquinas-y-equipos-termicos-i-n-1"
   cover: "../assets/images/publications/imgunidadmagnitudes.jpg"
   amazonUrl: "https://www.amazon.es/Identificaci%C3%B3n-Magnitudes-Instalaciones-T%C3%A9rmicas-M%C3%A1quinas-ebook/dp/B09BDM2K7L"

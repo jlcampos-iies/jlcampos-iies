@@ -53,6 +53,25 @@ describe('vistas en castellano', () => {
     expect(links).toHaveLength(7);
   });
 
+  it.each(['/publicaciones/', '/en/publications/', '/ca/publicacions/'])(
+    '%s: libros en orden (vol. I, vol. II en redacción, temas 1–6)',
+    (path) => {
+      const titles = readPage(path).querySelectorAll('.book h2').map((h) => h.text.trim());
+      expect(titles[0]).toBe('Máquinas y Equipos Térmicos I');
+      expect(titles[1]).toBe('Máquinas y Equipos Térmicos II');
+      expect(titles[2]).toMatch(/^Identificación de Magnitudes/);
+      expect(titles[3]).toMatch(/^Higrometría/);
+      expect(titles[4]).toMatch(/^Cálculo de Cargas Térmicas/);
+      expect(titles[5]).toMatch(/^Generación de Calor/);
+      expect(titles[6]).toMatch(/^Elaboración del Ciclo Frigorífico/);
+      expect(titles[7]).toMatch(/^Selección de Fluidos Refrigerantes/);
+      const vol2 = readPage(path).querySelectorAll('.book')[1];
+      expect(vol2.querySelector('.badge')).not.toBeNull();
+      expect(vol2.querySelector('a[href="https://met.jlc-ingenieros.com/"]')).not.toBeNull();
+      expect(vol2.querySelector('a[href^="https://www.amazon"]')).toBeNull();
+    },
+  );
+
   it.each(['/contacto/', '/en/contact/', '/ca/contacte/'])(
     '%s: sin mapa ni enlaces a mapas; con correo, teléfono y formulario',
     (path) => {

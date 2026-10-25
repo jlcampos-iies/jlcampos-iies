@@ -54,14 +54,23 @@ const projects = defineCollection({
 const localized = z.object({ es: z.string(), en: z.string(), ca: z.string() });
 
 const publications = defineCollection({
-  loader: file('src/content/publications.yaml'),
+  // order = posición en el YAML (getCollection no conserva el orden del fichero).
+  loader: file('src/content/publications.yaml', {
+    parser: (text) => (parse(text) as { id: string }[]).map((b, order) => ({ order, ...b })),
+  }),
   schema: ({ image }) =>
-    z.object({
-      cover: image(),
-      amazonUrl: z.url().refine((u) => !u.includes('?'), 'amazonUrl sin query string'),
-      title: localized,
-      summary: localized,
-    }),
+    z
+      .object({
+        cover: image(),
+        // Sin amazonUrl = libro aún no publicado (inProgress); infoUrl enlaza a más información.
+        amazonUrl: z.url().refine((u) => !u.includes('?'), 'amazonUrl sin query string').optional(),
+        inProgress: z.boolean().optional(),
+        infoUrl: z.url().optional(),
+        title: localized,
+        summary: localized,
+        order: z.number(),
+      })
+      .refine((b) => b.amazonUrl || b.inProgress, { message: 'Falta amazonUrl (o inProgress: true)', path: ['amazonUrl'] }),
 });
 
 const clients = defineCollection({

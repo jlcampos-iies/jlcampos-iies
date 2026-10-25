@@ -8,7 +8,7 @@ interface Props {
 }
 const { entry } = Astro.props;
 const { lang } = entry.data;
-const books = await getCollection('publications');
+const books = (await getCollection('publications')).sort((a, b) => a.data.order - b.data.order);
 const { Content } = await render(entry);
 ---
 <div class="container page-content prose">
@@ -28,8 +28,10 @@ const { Content } = await render(entry);
           />
           <div>
             <h2>{data.title[lang]}</h2>
+            {data.inProgress && <p class="badge">{t(lang, 'publications.inProgress')}</p>}
             <p>{data.summary[lang]}</p>
-            <a class="btn" href={data.amazonUrl} rel="noopener">{t(lang, 'publications.buy')}</a>
+            {data.amazonUrl && <a class="btn" href={data.amazonUrl} rel="noopener">{t(lang, 'publications.buy')}</a>}
+            {data.infoUrl && <a class="btn btn--secondary" href={data.infoUrl} rel="noopener">{t(lang, 'publications.more')}</a>}
           </div>
         </li>
       ))
