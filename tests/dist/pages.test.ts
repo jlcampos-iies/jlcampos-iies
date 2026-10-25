@@ -89,7 +89,7 @@ describe('vistas en castellano', () => {
     const card = page.querySelector('.met-card')!;
     expect(card).not.toBeNull();
     const hrefs = card.querySelectorAll('a').map((a) => a.getAttribute('href'));
-    expect(hrefs).toContain('https://met.jlc-ingenieros.com/unidades/ud01-magnitudes/');
+    expect(hrefs).toContain('https://met.jlc-ingenieros.com/#unidades');
     expect(hrefs).toContain('https://met.jlc-ingenieros.com/acceso/');
     expect(hrefs).toContain('mailto:info@jlc-ingenieros.com');
     // La tarjeta va antes que el texto y los libros.
@@ -152,7 +152,7 @@ describe('vistas en castellano', () => {
     const section = readPage(home).querySelector('.training')!;
     expect(section).not.toBeNull();
     const hrefs = section.querySelectorAll('a').map((a) => a.getAttribute('href'));
-    expect(hrefs).toContain('https://met.jlc-ingenieros.com/unidades/ud01-magnitudes/');
+    expect(hrefs).toContain('https://met.jlc-ingenieros.com/#unidades');
     expect(hrefs).toContain(pubs);
     if (note) expect(section.text).toContain(note);
     if (home === '/') {
