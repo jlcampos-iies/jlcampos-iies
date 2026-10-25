@@ -75,12 +75,18 @@ describe('colecciones de datos', () => {
     expect(await getCollection('clients')).toHaveLength(14);
   });
 
-  it('publications tiene enlaces de Amazon limpios', async () => {
+  it('publications: ASIN impreso+Kindle (salvo inProgress) y enlace al complemento', async () => {
     const books = await getCollection('publications');
-    expect(books.length).toBeGreaterThan(0);
+    expect(books).toHaveLength(8);
     for (const b of books) {
-      if (b.data.inProgress) expect(b.data.amazonUrl).toBeUndefined();
-      else expect(b.data.amazonUrl).toMatch(/^https:\/\/www\.amazon\.es\/[^/?]+\/dp\/[A-Z0-9]{10}$/);
+      if (b.data.inProgress) expect(b.data.amazon).toBeUndefined();
+      else {
+        expect(b.data.amazon?.print).toMatch(/^[A-Z0-9]{10}$/);
+        expect(b.data.amazon?.kindle).toMatch(/^[A-Z0-9]{10}$/);
+      }
+      expect(b.data.companionUrl).toMatch(/^https:\/\/met\.jlc-ingenieros\.com\//);
+      expect(b.data).not.toHaveProperty('amazonUrl');
+      expect(b.data).not.toHaveProperty('infoUrl');
     }
   });
 

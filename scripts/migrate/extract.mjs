@@ -58,6 +58,17 @@ const DESCRIPTION_OVERRIDE = {
 const log = (...a) => console.log(...a);
 const slug = (s) =>
   s.normalize('NFD').replace(/[̀-ͯ]/g, '').toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '');
+// Complemento interactivo (https://met.jlc-ingenieros.com/): clave = ASIN Kindle (el que enlaza WordPress).
+const MET_BASE = 'https://met.jlc-ingenieros.com/';
+const MET_BOOKS = {
+  B09BNMRBZT: { print: '8461660870', path: '' },
+  B09BDM2K7L: { print: 'B09BGHZ3K6', path: 'unidades/ud01-magnitudes/' },
+  B09BFLFJ6V: { print: 'B09BMBF4CL', path: 'unidades/ud02-higrometria/' },
+  B09BFRPY6K: { print: 'B09BM38K12', path: 'unidades/ud03-cargas-termicas/' },
+  B09BG68YTJ: { print: 'B09BG77471', path: 'unidades/ud04-generacion-calor/' },
+  B09BG35C8H: { print: 'B09BGPG2Q1', path: 'unidades/ud05-ciclo-frigorifico/' },
+  B09BNZTMBW: { print: 'B09BJQGG16', path: 'unidades/ud06-refrigerantes-lubricantes/' },
+};
 const q = (s) => JSON.stringify(s); // cadena YAML válida entre comillas dobles
 const clean = (s) => s.replace(/ /g, ' ').replace(/\s+/g, ' ').trim();
 
@@ -258,12 +269,18 @@ for (const { key } of PAGES) {
     const yaml = h2.map((title, i) => {
       const m = decodeURI(links[i]).match(/^(https:\/\/www\.amazon\.es\/)([^/]+)\/dp\/([A-Z0-9]{10})/);
       if (!m) throw new Error('Enlace Amazon inesperado: ' + links[i]);
-      const href = links[i].match(/^(https:\/\/www\.amazon\.es\/[^/]+\/dp\/[A-Z0-9]{10})/)[1];
+      // WordPress enlaza la edición Kindle; el ASIN impreso y la página del complemento salen de MET_BOOKS.
+      const kindle = m[3];
+      const met = MET_BOOKS[kindle];
+      if (!met) throw new Error('ASIN sin mapeo en MET_BOOKS: ' + kindle);
       const cover = `../assets/images/${registerImage(imgs[i], 'publications')}`;
       return [
         `- id: ${q(slug(title))}`,
         `  cover: ${q(cover)}`,
-        `  amazonUrl: ${q(href)}`,
+        `  amazon:`,
+        `    print: ${q(met.print)}`,
+        `    kindle: ${q(kindle)}`,
+        `  companionUrl: ${q(MET_BASE + met.path)}`,
         `  title:`,
         `    es: ${q(title)}`,
         `    en: ${q(title)}`,

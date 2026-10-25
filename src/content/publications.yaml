@@ -1,6 +1,9 @@
 - id: "maquinas-y-equipos-termicos-i"
   cover: "../assets/images/publications/imgmaquinasyequipos.jpg"
-  amazonUrl: "https://www.amazon.es/M%C3%A1quinas-y-Equipos-T%C3%A9rmicos-I-ebook/dp/B09BNMRBZT"
+  amazon:
+    print: "8461660870"
+    kindle: "B09BNMRBZT"
+  companionUrl: "https://met.jlc-ingenieros.com/"
   title:
     es: "Máquinas y Equipos Térmicos I"
     en: "Máquinas y Equipos Térmicos I"
@@ -12,7 +15,7 @@
 - id: "maquinas-y-equipos-termicos-ii"
   cover: "../assets/images/publications/vol2-cover.jpg"
   inProgress: true
-  infoUrl: "https://met.jlc-ingenieros.com/"
+  companionUrl: "https://met.jlc-ingenieros.com/"
   title:
     es: "Máquinas y Equipos Térmicos II"
     en: "Máquinas y Equipos Térmicos II"
@@ -23,7 +26,10 @@
     ca: "Segon volum dels materials: aplega els Blocs III i IV (unitats 6 a 10) del mòdul de Màquines i Equips Tèrmics. És en redacció; mentrestant, el complement interactiu del llibre anima els conceptes i resol els exemples pas a pas."
 - id: "identificacion-de-magnitudes-en-instalaciones-termicas-maquinas-y-equipos-termicos-i-n-1"
   cover: "../assets/images/publications/imgunidadmagnitudes.jpg"
-  amazonUrl: "https://www.amazon.es/Identificaci%C3%B3n-Magnitudes-Instalaciones-T%C3%A9rmicas-M%C3%A1quinas-ebook/dp/B09BDM2K7L"
+  amazon:
+    print: "B09BGHZ3K6"
+    kindle: "B09BDM2K7L"
+  companionUrl: "https://met.jlc-ingenieros.com/unidades/ud01-magnitudes/"
   title:
     es: "Identificación de Magnitudes en Instalaciones Térmicas (Máquinas y Equipos Térmicos I nº 1)"
     en: "Identificación de Magnitudes en Instalaciones Térmicas (Máquinas y Equipos Térmicos I nº 1)"
@@ -34,7 +40,10 @@
     ca: "El tècnic ha de conèixer les magnituds que intervenen en els processos termodinàmics, ja que li permeten analitzar el rendiment i detectar possibles avaries en les instal·lacions tèrmiques. Una de les més importants és l'entalpia, fonamental per caracteritzar les màquines tèrmiques, especialment les del cicle frigorífic. Comprendre conceptes com l'energia o l'entalpia pot resultar complex fins i tot per a professionals experimentats. A més, molts equips actuals són de fabricació estrangera, per la qual cosa és essencial dominar els factors de conversió d'unitats. Aquest coneixement garanteix precisió i eficàcia en el treball tècnic."
 - id: "higrometria-maquinas-y-equipos-termicos-i-n-2"
   cover: "../assets/images/publications/imghigrometria.png"
-  amazonUrl: "https://www.amazon.es/Higrometr%C3%ADa-M%C3%A1quinas-Equipos-T%C3%A9rmicos-n%C2%BA-ebook/dp/B09BFLFJ6V"
+  amazon:
+    print: "B09BMBF4CL"
+    kindle: "B09BFLFJ6V"
+  companionUrl: "https://met.jlc-ingenieros.com/unidades/ud02-higrometria/"
   title:
     es: "Higrometría (Máquinas y Equipos Térmicos I nº 2)"
     en: "Higrometría (Máquinas y Equipos Térmicos I nº 2)"
@@ -45,7 +54,10 @@
     ca: "Les instal·lacions tèrmiques tenen per objectiu crear unes condicions adequades en un ambient, cosa que exigeix tractar correctament l'aire atmosfèric que el compon. Per fer-ho, és essencial conèixer-ne la composició i el comportament, especialment el contingut d'humitat, que és l'objecte d'estudi de la higrometria. Un disseny modern ha de tenir en compte no només la temperatura, sinó també factors com el soroll, la difusió i la qualitat de l'aire. El punt de partida de tota instal·lació és una anàlisi precisa de les condicions higromètriques de l'entorn. En darrer terme, la climatització té com a objectiu principal garantir el confort i el benestar de les persones."
 - id: "calculo-de-cargas-termicas-maquinas-y-equipos-termicos-i-n-3"
   cover: "../assets/images/publications/imgunidad3cargastermicas.jpg"
-  amazonUrl: "https://www.amazon.es/C%C3%A1lculo-T%C3%A9rmicas-M%C3%A1quinas-Equipos-T%C3%A9rmicos-ebook/dp/B09BFRPY6K"
+  amazon:
+    print: "B09BM38K12"
+    kindle: "B09BFRPY6K"
+  companionUrl: "https://met.jlc-ingenieros.com/unidades/ud03-cargas-termicas/"
   title:
     es: "Cálculo de Cargas Térmicas (Máquinas y Equipos Térmicos I nº 3)"
     en: "Cálculo de Cargas Térmicas (Máquinas y Equipos Térmicos I nº 3)"
@@ -56,7 +68,10 @@
     ca: "Tota operació de condicionament implica una transferència de calor que es pot analitzar mitjançant un balanç energètic. Per fer-ho, cal conèixer amb precisió la càrrega tèrmica, és a dir, l'energia necessària per dur a terme el procés. Aquest càlcul és el punt de partida fonamental per a qualsevol instal·lador, ja que un error pot tenir conseqüències greus. En casos complexos, com la climatització d'espais singulars, és recomanable comptar amb el suport d'un enginyer especialitzat. Obtenir una dada correcta és essencial per dissenyar instal·lacions tèrmiques eficients i segures."
 - id: "generacion-de-calor-maquinas-y-equipos-termicos-i-n-4"
   cover: "../assets/images/publications/imgunidadivgeneracion.jpg"
-  amazonUrl: "https://www.amazon.es/Generaci%C3%B3n-Calor-M%C3%A1quinas-Equipos-T%C3%A9rmicos-ebook/dp/B09BG68YTJ"
+  amazon:
+    print: "B09BG77471"
+    kindle: "B09BG68YTJ"
+  companionUrl: "https://met.jlc-ingenieros.com/unidades/ud04-generacion-calor/"
   title:
     es: "Generación de Calor (Máquinas y Equipos Térmicos I nº 4)"
     en: "Generación de Calor (Máquinas y Equipos Térmicos I nº 4)"
@@ -67,7 +82,10 @@
     ca: "En les darreres dècades, la demanda energètica mundial ha augmentat i ha provocat diverses crisis economicoenergètiques que van afectar greument l'economia global. A Espanya, aquesta situació és més preocupant per l'alta dependència de l'exterior, cosa que va impulsar l'Estratègia d'Estalvi i Eficiència Energètica 2004-2012. L'ús de combustibles fòssils continua sent una de les principals causes del deteriorament ambiental. Davant la manca d'alternatives tecnològiques plenament competitives, és essencial millorar l'eficiència de les màquines tèrmiques. Aquesta unitat tracta tant la generació de calor mitjançant combustibles fòssils com l'ús de l'energia solar, amb l'objectiu d'optimitzar-ne el rendiment."
 - id: "elaboracion-del-ciclo-frigorifico-maquinas-y-equipos-termicos-i-n-5"
   cover: "../assets/images/publications/imgunidadvelaboracion.jpg"
-  amazonUrl: "https://www.amazon.es/Elaboraci%C3%B3n-Frigor%C3%ADfico-M%C3%A1quinas-Equipos-T%C3%A9rmicos-ebook/dp/B09BG35C8H"
+  amazon:
+    print: "B09BGPG2Q1"
+    kindle: "B09BG35C8H"
+  companionUrl: "https://met.jlc-ingenieros.com/unidades/ud05-ciclo-frigorifico/"
   title:
     es: "Elaboración del Ciclo Frigorífico (Máquinas y Equipos Térmicos I nº 5)"
     en: "Elaboración del Ciclo Frigorífico (Máquinas y Equipos Térmicos I nº 5)"
@@ -78,7 +96,10 @@
     ca: "El cicle tancat de compressió de vapor, representat en el diagrama de Mollier, és una eina fonamental per als tècnics en sistemes tèrmics. Permet analitzar el funcionament i l'eficiència energètica de les màquines que l'utilitzen. Aquest diagrama mostra nombrosos paràmetres operatius i energètics. A més, ajuda a preveure com es comportarà la màquina davant possibles canvis en aquests paràmetres. En conjunt, és essencial per avaluar i optimitzar el rendiment dels sistemes frigorífics."
 - id: "seleccion-de-fluidos-refrigerantes-y-lubricantes-maquinas-y-equipos-termicos-ii-n-1"
   cover: "../assets/images/publications/imgunidadvi.jpg"
-  amazonUrl: "https://www.amazon.es/Selecci%C3%B3n-Refrigerantes-Lubricantes-M%C3%A1quinas-T%C3%A9rmicos-ebook/dp/B09BNZTMBW"
+  amazon:
+    print: "B09BJQGG16"
+    kindle: "B09BNZTMBW"
+  companionUrl: "https://met.jlc-ingenieros.com/unidades/ud06-refrigerantes-lubricantes/"
   title:
     es: "Selección de Fluidos Refrigerantes y Lubricantes (Máquinas y Equipos Térmicos II nº 1)"
     en: "Selección de Fluidos Refrigerantes y Lubricantes (Máquinas y Equipos Térmicos II nº 1)"

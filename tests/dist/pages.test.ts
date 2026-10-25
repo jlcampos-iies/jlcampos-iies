@@ -17,6 +17,8 @@ const titleOf = (r: (typeof esRoutes)[number]) =>
     : projects.find((p) => p.data.translationKey === r.key && p.data.lang === 'es')
   )!.data.title;
 
+const PUB_PAGES = ['/publicaciones/', '/en/publications/', '/ca/publicacions/'];
+
 describe('vistas en castellano', () => {
   it.each(esRoutes.map((r) => [r.path, titleOf(r)]))('%s tiene un único <h1> = título', (path, title) => {
     const h1 = readPage(path).querySelectorAll('h1');
@@ -45,12 +47,51 @@ describe('vistas en castellano', () => {
     expect(text).toContain('Bridgestone');
   });
 
-  it('/publicaciones/ tiene 7 enlaces limpios a Amazon', () => {
-    const links = readPage('/publicaciones/')
+  it.each(PUB_PAGES)('%s: 7 libros con enlaces Amazon impreso + Kindle (14)', (path) => {
+    const links = readPage(path)
       .querySelectorAll('a')
-      .map((a) => a.getAttribute('href')!)
-      .filter((h) => h.startsWith('https://www.amazon.es/') && !h.includes('?'));
-    expect(links).toHaveLength(7);
+      .filter((a) => (a.getAttribute('href') ?? '').includes('amazon.'));
+    expect(links).toHaveLength(14);
+    for (const a of links) {
+      expect(a.getAttribute('href')).toMatch(/^https:\/\/www\.amazon\.es\/dp\/[A-Z0-9]{10}$/);
+      expect(a.getAttribute('target')).toBe('_blank');
+      expect(a.getAttribute('rel')).toContain('noopener');
+    }
+    const books = readPage(path).querySelectorAll('.book');
+    expect(books.filter((b) => b.querySelectorAll('a[href^="https://www.amazon.es/dp/"]').length === 2)).toHaveLength(7);
+  });
+
+  it.each(PUB_PAGES)('%s: cada libro enlaza a su página del complemento', (path) => {
+    const books = readPage(path).querySelectorAll('.book');
+    expect(books).toHaveLength(8);
+    const expected = [
+      '', '', 'unidades/ud01-magnitudes/', 'unidades/ud02-higrometria/', 'unidades/ud03-cargas-termicas/',
+      'unidades/ud04-generacion-calor/', 'unidades/ud05-ciclo-frigorifico/', 'unidades/ud06-refrigerantes-lubricantes/',
+    ];
+    books.forEach((b, i) => {
+      const hrefs = b.querySelectorAll('a').map((a) => a.getAttribute('href'));
+      expect(hrefs, `libro ${i}`).toContain(`https://met.jlc-ingenieros.com/${expected[i]}`);
+    });
+  });
+
+  it.each(PUB_PAGES)('%s: tarjeta destacada del complemento (prueba, acceso, FP)', (path) => {
+    const page = readPage(path);
+    const card = page.querySelector('.met-card')!;
+    expect(card).not.toBeNull();
+    const hrefs = card.querySelectorAll('a').map((a) => a.getAttribute('href'));
+    expect(hrefs).toContain('https://met.jlc-ingenieros.com/unidades/ud01-magnitudes/');
+    expect(hrefs).toContain('https://met.jlc-ingenieros.com/acceso/');
+    expect(hrefs).toContain('mailto:info@jlc-ingenieros.com');
+    // La tarjeta va antes que el texto y los libros.
+    const main = page.querySelector('main')!.innerHTML;
+    expect(main.indexOf('met-card')).toBeLessThan(main.indexOf('class="books"'));
+    const note = path === '/publicaciones/' ? null : path.startsWith('/en/') ? '(in Spanish)' : '(en castellà)';
+    if (note) {
+      expect(card.text).toContain(note);
+      expect(page.querySelectorAll('.book')[2].text).toContain(note);
+    } else {
+      expect(card.text).not.toMatch(/castellano\)/);
+    }
   });
 
   it.each(['/publicaciones/', '/en/publications/', '/ca/publicacions/'])(
@@ -71,6 +112,19 @@ describe('vistas en castellano', () => {
       expect(vol2.querySelector('a[href^="https://www.amazon"]')).toBeNull();
     },
   );
+
+  it.each([
+    ['/', '/publicaciones/', null],
+    ['/en/', '/en/publications/', '(in Spanish)'],
+    ['/ca/', '/ca/publicacions/', '(en castellà)'],
+  ])('%s: sección de formación con enlace de prueba y a publicaciones', (home, pubs, note) => {
+    const section = readPage(home).querySelector('.training')!;
+    expect(section).not.toBeNull();
+    const hrefs = section.querySelectorAll('a').map((a) => a.getAttribute('href'));
+    expect(hrefs).toContain('https://met.jlc-ingenieros.com/unidades/ud01-magnitudes/');
+    expect(hrefs).toContain(pubs);
+    if (note) expect(section.text).toContain(note);
+  });
 
   it.each(['/contacto/', '/en/contact/', '/ca/contacte/'])(
     '%s: sin mapa ni enlaces a mapas; con correo, teléfono y formulario',

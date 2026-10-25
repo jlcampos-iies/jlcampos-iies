@@ -309,8 +309,69 @@ img {
 .btn--secondary:hover {
   color: var(--on-navy);
 }
-.book .btn + .btn {
-  margin-left: 0.5rem;
+.actions {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.75rem 1.25rem;
+}
+.action {
+  display: inline-flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.5rem;
+}
+.btn-note {
+  font-size: 0.8125rem;
+  color: var(--muted);
+}
+.buy {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.5rem;
+  margin: 0 0 0.75rem;
+}
+.buy__label {
+  font-weight: 500;
+}
+.met-card,
+.training {
+  padding: 1.25rem;
+  background: var(--bg);
+  border-top: 4px solid var(--slate);
+  border-radius: var(--radius-card);
+  box-shadow: var(--shadow-card);
+}
+.met-card {
+  margin-block: 1rem 1.5rem;
+}
+.prose .met-card h2,
+.training h2 {
+  margin: 0 0 0.25rem;
+  font-size: 1.375rem;
+}
+.met-card__subtitle {
+  margin: 0 0 0.75rem;
+  font-weight: 500;
+  color: var(--text-soft);
+}
+.met-card__fp {
+  margin: 1rem 0 0;
+  font-size: 0.875rem;
+  color: var(--muted);
+}
+.training {
+  display: grid;
+  gap: 1rem;
+  align-items: center;
+}
+.training p {
+  margin-top: 0;
+}
+.training__img {
+  width: 8rem;
+  height: auto;
 }
 .badge {
   display: inline-block;
@@ -633,6 +694,13 @@ img {
   }
   .split {
     grid-template-columns: 1fr 1fr;
+  }
+  .training {
+    grid-template-columns: 10rem 1fr;
+    gap: 2rem;
+  }
+  .training__img {
+    width: 100%;
   }
   .notfound {
     grid-template-columns: repeat(3, 1fr);

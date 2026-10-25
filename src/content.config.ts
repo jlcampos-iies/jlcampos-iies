@@ -51,6 +51,7 @@ const projects = defineCollection({
       }),
 });
 
+const asin = z.string().regex(/^[A-Z0-9]{10}$/);
 const localized = z.object({ es: z.string(), en: z.string(), ca: z.string() });
 
 const publications = defineCollection({
@@ -62,15 +63,16 @@ const publications = defineCollection({
     z
       .object({
         cover: image(),
-        // Sin amazonUrl = libro aún no publicado (inProgress); infoUrl enlaza a más información.
-        amazonUrl: z.url().refine((u) => !u.includes('?'), 'amazonUrl sin query string').optional(),
+        // amazon = ASIN de la edición impresa y de Kindle; solo puede faltar en libros inProgress.
+        amazon: z.object({ print: asin, kindle: asin }).optional(),
         inProgress: z.boolean().optional(),
-        infoUrl: z.url().optional(),
+        // Página del libro/unidad en el complemento interactivo (solo en castellano).
+        companionUrl: z.url(),
         title: localized,
         summary: localized,
         order: z.number(),
       })
-      .refine((b) => b.amazonUrl || b.inProgress, { message: 'Falta amazonUrl (o inProgress: true)', path: ['amazonUrl'] }),
+      .refine((b) => b.amazon || b.inProgress, { message: 'Falta amazon (o inProgress: true)', path: ['amazon'] }),
 });
 
 const clients = defineCollection({

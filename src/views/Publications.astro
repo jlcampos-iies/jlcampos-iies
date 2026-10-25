@@ -3,6 +3,8 @@ import { Picture } from 'astro:assets';
 import { getCollection, render, type CollectionEntry } from 'astro:content';
 import { t } from '../i18n/ui';
 
+const MET = 'https://met.jlc-ingenieros.com/';
+
 interface Props {
   entry: CollectionEntry<'pages'>;
 }
@@ -10,9 +12,28 @@ const { entry } = Astro.props;
 const { lang } = entry.data;
 const books = (await getCollection('publications')).sort((a, b) => a.data.order - b.data.order);
 const { Content } = await render(entry);
+const note = lang === 'es' ? '' : t(lang, 'met.spanishOnly');
 ---
 <div class="container page-content prose">
   <h1>{entry.data.title}</h1>
+  <section class="met-card" aria-labelledby="met-title">
+    <h2 id="met-title">{t(lang, 'met.title')}</h2>
+    <p class="met-card__subtitle">{t(lang, 'met.subtitle')}</p>
+    <p>{t(lang, 'met.text')}</p>
+    <div class="actions">
+      <span class="action">
+        <a class="btn" href={`${MET}unidades/ud01-magnitudes/`} target="_blank" rel="noopener">{t(lang, 'met.tryFree')}</a>
+        {note && <span class="btn-note">{note}</span>}
+      </span>
+      <span class="action">
+        <a class="btn btn--secondary" href={`${MET}acceso/`} target="_blank" rel="noopener">{t(lang, 'met.haveBook')}</a>
+        {note && <span class="btn-note">{note}</span>}
+      </span>
+    </div>
+    <p class="met-card__fp">
+      {t(lang, 'met.fpBefore')}<a href="mailto:info@jlc-ingenieros.com">{t(lang, 'met.fpLink')}</a>
+    </p>
+  </section>
   <Content />
   <ul class="books">
     {
@@ -30,8 +51,17 @@ const { Content } = await render(entry);
             <h2>{data.title[lang]}</h2>
             {data.inProgress && <p class="badge">{t(lang, 'publications.inProgress')}</p>}
             <p>{data.summary[lang]}</p>
-            {data.amazonUrl && <a class="btn" href={data.amazonUrl} rel="noopener">{t(lang, 'publications.buy')}</a>}
-            {data.infoUrl && <a class="btn btn--secondary" href={data.infoUrl} rel="noopener">{t(lang, 'publications.more')}</a>}
+            {data.amazon && (
+              <p class="buy">
+                <span class="buy__label">{t(lang, 'publications.buyLabel')}</span>
+                <a class="btn" href={`https://www.amazon.es/dp/${data.amazon.print}`} target="_blank" rel="noopener" aria-label={`${t(lang, 'publications.print')}: ${data.title[lang]}`}>{t(lang, 'publications.print')}</a>
+                <a class="btn" href={`https://www.amazon.es/dp/${data.amazon.kindle}`} target="_blank" rel="noopener" aria-label={`${t(lang, 'publications.kindle')}: ${data.title[lang]}`}>{t(lang, 'publications.kindle')}</a>
+              </p>
+            )}
+            <p class="buy">
+              <a class="btn btn--secondary" href={data.companionUrl} target="_blank" rel="noopener">{t(lang, 'publications.companion')}</a>
+              {note && <span class="btn-note">{note}</span>}
+            </p>
           </div>
         </li>
       ))

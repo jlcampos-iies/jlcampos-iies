@@ -3,11 +3,13 @@ import { Picture } from 'astro:assets';
 import type { CollectionEntry } from 'astro:content';
 import { pagePath } from '../i18n/routes';
 import { t } from '../i18n/ui';
+import vol1 from '../assets/images/publications/imgmaquinasyequipos.jpg';
 
 interface Props {
   entry: CollectionEntry<'pages'>;
 }
 const { entry } = Astro.props;
+const note = entry.data.lang === 'es' ? '' : t(entry.data.lang, 'met.spanishOnly');
 const { title, description, hero, heroAlt, services = [], lang } = entry.data;
 ---
 <section class="hero">
@@ -43,4 +45,28 @@ const { title, description, hero, heroAlt, services = [], lang } = entry.data;
       ))
     }
   </ul>
+</section>
+<section class="container page-content">
+  <div class="training">
+    <Picture
+      class="training__img"
+      src={vol1}
+      formats={['avif', 'webp']}
+      widths={[160, 320]}
+      sizes="160px"
+      alt={t(lang, 'home.training.coverAlt')}
+      loading="lazy"
+    />
+    <div>
+      <h2>{t(lang, 'home.training.title')}</h2>
+      <p>{t(lang, 'home.training.text')}</p>
+      <div class="actions">
+        <span class="action">
+          <a class="btn" href="https://met.jlc-ingenieros.com/unidades/ud01-magnitudes/" target="_blank" rel="noopener">{t(lang, 'met.tryFree')}</a>
+          {note && <span class="btn-note">{note}</span>}
+        </span>
+        <a class="btn btn--secondary" href={pagePath('publications', lang)}>{t(lang, 'home.training.publications')}</a>
+      </div>
+    </div>
+  </div>
 </section>
